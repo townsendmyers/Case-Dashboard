@@ -1,0 +1,1328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>NOLA Criminal Law — Case Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#F7F5F0;--surface:#FFF;--surface2:#F0EDE6;--ink:#1A1814;--ink2:#5C5750;--ink3:#9B9590;
+  --accent:#2C4A3E;--accent-light:#E8F0ED;--gold:#B8860B;--gold-light:#FDF8EC;
+  --border:#E2DDD6;--danger:#8B2500;--danger-light:#FDF0EC;--radius:4px;--radius-lg:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;font-size:14px}
+
+header{background:var(--accent);padding:1.25rem 2rem;display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid var(--gold);flex-wrap:wrap;gap:10px}
+header h1{font-family:'Playfair Display',serif;font-size:22px;font-weight:600;color:#fff}
+header p{font-size:12px;color:rgba(255,255,255,.6);margin-top:2px}
+.header-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;border-radius:var(--radius);cursor:pointer;padding:7px 14px;transition:all .15s;border:none;letter-spacing:.02em}
+.btn-gold{background:var(--gold);color:#fff}.btn-gold:hover{background:#9A7009}
+.btn-outline{background:transparent;color:rgba(255,255,255,.85);border:1px solid rgba(255,255,255,.3)}.btn-outline:hover{background:rgba(255,255,255,.1)}
+.btn-ghost{background:transparent;color:var(--ink2);border:1px solid var(--border);padding:4px 10px;font-size:11px;white-space:nowrap}.btn-ghost:hover{background:var(--surface2);color:var(--ink)}
+.btn-del{background:transparent;color:var(--danger);border:1px solid #F4C5B5;padding:4px 10px;font-size:11px;white-space:nowrap}.btn-del:hover{background:var(--danger-light)}
+
+main{max-width:1320px;margin:0 auto;padding:1.5rem 2rem}
+
+/* Stats */
+.stats{display:flex;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:1.25rem;flex-wrap:wrap}
+.stat{flex:1;min-width:65px;background:var(--surface);padding:.8rem .75rem;text-align:center;cursor:pointer;transition:opacity .15s}
+.stat:hover{opacity:.8}
+.stat-num{font-family:'Playfair Display',serif;font-size:22px;font-weight:600;line-height:1}
+.stat-label{font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:.07em;margin-top:3px;font-weight:500}
+
+/* Filter bar */
+.filter-bar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1.5rem;align-items:center}
+.filter-bar-label{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink3);font-weight:500;margin-right:4px}
+.cat-btn{display:inline-flex;align-items:center;gap:5px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;padding:5px 12px;border-radius:20px;cursor:pointer;border:1.5px solid;transition:all .15s;letter-spacing:.02em;white-space:nowrap}
+.cat-btn .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.cat-btn.inactive{background:transparent!important;color:var(--ink3)!important;border-color:var(--border)!important}
+.cat-btn.inactive .dot{background:var(--ink3)!important}
+.cat-btn-all{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;padding:5px 14px;border-radius:20px;cursor:pointer;border:1.5px solid var(--accent);background:var(--accent);color:#fff;transition:all .15s}
+.cat-btn-all.inactive{background:transparent;color:var(--ink3);border-color:var(--border)}
+
+/* Two-pane calendar row */
+.panels-row{display:flex;flex-direction:column;gap:14px;margin-bottom:1.75rem}
+.panels-bottom{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:700px){.panels-bottom{grid-template-columns:1fr}}
+
+/* 7-day list pane + reminders pane share same style */
+.reminders-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+.reminders-header{display:flex;align-items:center;justify-content:space-between;padding:.85rem 1.25rem;border-bottom:1px solid var(--border);background:#FFFDF0}
+.reminders-header h2{font-family:'Playfair Display',serif;font-size:14px;font-weight:600;color:var(--ink)}
+.reminders-header span{font-size:11px;color:var(--ink3);font-weight:500;text-transform:uppercase;letter-spacing:.07em}
+/* 7-day list pane */
+.upcoming-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+.upcoming-header{display:flex;align-items:center;justify-content:space-between;padding:.85rem 1.25rem;border-bottom:1px solid var(--border);background:#FFF8F6}
+.upcoming-header h2{font-family:'Playfair Display',serif;font-size:14px;font-weight:600;color:var(--ink)}
+.upcoming-header span{font-size:11px;color:var(--ink3);font-weight:500;text-transform:uppercase;letter-spacing:.07em}
+.upcoming-item{display:flex;align-items:center;gap:.75rem;padding:.6rem 1rem;border-bottom:1px solid var(--border);transition:background .1s;cursor:pointer}
+.upcoming-item:last-child{border-bottom:none}
+.upcoming-item:hover{background:var(--bg)}
+.upcoming-days{min-width:34px;text-align:center;flex-shrink:0}
+.upcoming-days-num{font-family:'Playfair Display',serif;font-size:17px;font-weight:600;line-height:1}
+.upcoming-days-num.today{color:var(--danger)}.upcoming-days-num.soon{color:var(--gold)}.upcoming-days-num.later{color:var(--accent)}
+.upcoming-days-label{font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink3);margin-top:1px}
+.upcoming-divider{width:1px;height:28px;background:var(--border);flex-shrink:0}
+.upcoming-info{flex:1;min-width:0}
+.upcoming-case{font-size:12px;font-weight:500;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.upcoming-event{font-size:11px;color:var(--ink3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.upcoming-type-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.upcoming-empty{padding:1.25rem;font-size:13px;color:var(--ink3);text-align:center}
+
+/* Weekly calendar pane */
+.cal-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+.cal-panel-header{display:flex;align-items:center;justify-content:space-between;padding:.85rem 1.25rem;border-bottom:1px solid var(--border);background:#F7F9F8}
+.cal-panel-header h2{font-family:'Playfair Display',serif;font-size:14px;font-weight:600;color:var(--ink)}
+.cal-nav{display:flex;align-items:center;gap:6px}
+.cal-nav button{background:transparent;border:1px solid var(--border);border-radius:var(--radius);padding:3px 9px;cursor:pointer;font-size:13px;color:var(--ink2);font-family:'DM Sans',sans-serif}
+.cal-nav button:hover{background:var(--surface2)}
+.cal-range{font-size:11px;color:var(--ink3);min-width:130px;text-align:center}
+.cal-scroll{overflow-y:auto;max-height:252px;scroll-behavior:smooth}
+
+/* Cases */
+/* Cases header + controls */
+.cases-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;flex-wrap:wrap;gap:10px}
+.cases-header h2{font-family:'Playfair Display',serif;font-size:18px;font-weight:600;color:var(--ink)}
+.cases-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.search-box{font-family:'DM Sans',sans-serif;font-size:13px;padding:6px 12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);color:var(--ink);outline:none;width:180px}
+.search-box:focus{border-color:var(--accent)}
+.sort-label{font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em;font-weight:500}
+.sort-btn{font-family:'DM Sans',sans-serif;font-size:12px;padding:5px 11px;border:1px solid var(--border);border-radius:20px;background:transparent;color:var(--ink3);cursor:pointer;transition:all .15s;font-weight:500}
+.sort-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.sort-btn:hover:not(.active){background:var(--surface2);color:var(--ink)}
+
+/* Row layout */
+.case-rows{display:flex;flex-direction:column;gap:6px}
+.case-row{background:var(--surface);border-radius:var(--radius-lg);border-left:4px solid var(--border);display:grid;grid-template-columns:180px 120px 1fr minmax(160px,220px) 84px;gap:0;transition:box-shadow .15s;overflow:hidden}
+.case-row:hover{box-shadow:0 2px 12px rgba(0,0,0,.08)}
+@media(max-width:1000px){.case-row{grid-template-columns:160px 110px 1fr 80px}}
+@media(max-width:1000px){.row-dates-col{display:none}}
+
+.row-name-col{padding:12px 14px;border-right:1px solid var(--border);display:flex;flex-direction:column;justify-content:center;min-width:0}
+.row-case-name{font-family:'Playfair Display',serif;font-size:14px;font-weight:600;color:var(--ink);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row-case-meta{font-size:11px;color:var(--ink3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.row-type-col{padding:12px 10px;border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:5px;min-width:0;overflow:hidden}
+.type-badge{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.03em;padding:3px 7px;border-radius:6px;white-space:normal;word-break:break-word;border:1px solid;display:inline-block;line-height:1.3}
+.cal-only-badge{display:inline-block;font-size:10px;padding:1px 6px;background:#FDF8EC;color:#7A5C00;border:1px solid #E8D080;border-radius:2px;margin-left:3px;vertical-align:middle}
+
+.row-summary-col{padding:12px 14px;border-right:1px solid var(--border);min-width:0}
+.row-summary-label{font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:var(--ink3);margin-bottom:3px}
+.row-summary-text{font-size:13px;color:var(--ink2);line-height:1.55;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;max-height:calc(1.55em * 3)}
+
+.row-dates-col{padding:12px 12px;border-right:1px solid var(--border);display:flex;flex-direction:column;gap:3px;min-width:180px;max-width:240px;justify-content:flex-start}
+.row-dates-label{font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:var(--ink3);margin-bottom:2px}
+
+/* Events in row */
+.row-event{display:flex;align-items:center;gap:5px;font-size:11px;padding:2px 6px;border-radius:3px;border-left:2px solid;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row-event-date{font-weight:600;flex-shrink:0}
+.row-event-label{color:var(--ink2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.row-actions-col{padding:8px 10px;display:flex;flex-direction:column;gap:4px;justify-content:center;align-items:center;background:var(--bg);min-width:80px;max-width:84px;flex-shrink:0}
+
+/* Generic */
+.section-label{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:var(--ink3);margin-bottom:3px;margin-top:8px}
+.card-events{margin-top:8px;display:flex;flex-direction:column;gap:3px}
+.card-event-row{display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:var(--radius);font-size:12px}
+.card-event-date{font-weight:500;color:var(--ink);white-space:nowrap;min-width:72px}
+.card-event-label{color:var(--ink2);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-event-type{font-size:9px;padding:1px 5px;border-radius:8px;font-weight:500;white-space:nowrap;border:1px solid}
+.updated-label{font-size:11px;color:var(--ink3)}
+.card-btns{display:flex;gap:5px}
+.empty{text-align:center;padding:4rem 2rem;color:var(--ink3)}
+.empty-icon{font-size:36px;margin-bottom:12px;opacity:.4}
+
+/* Modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:200;padding:1rem}
+.modal{background:var(--surface);border-radius:var(--radius-lg);border-top:4px solid var(--gold);padding:1.75rem;width:100%;max-width:600px;max-height:90vh;overflow-y:auto}
+.modal h2{font-family:'Playfair Display',serif;font-size:18px;font-weight:600;color:var(--ink);margin-bottom:1.25rem}
+.field{margin-bottom:1rem}
+.field label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.07em;font-weight:500;color:var(--ink3);margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--ink);outline:none;transition:border-color .15s}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
+.field textarea{min-height:90px;resize:vertical;line-height:1.6}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid var(--border)}
+.btn-save{background:var(--accent);color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;border:none;border-radius:var(--radius);padding:8px 20px;cursor:pointer}
+.btn-save:hover{background:#1e3429}
+.btn-cancel-modal{background:transparent;color:var(--ink2);font-family:'DM Sans',sans-serif;font-size:13px;border:1px solid var(--border);border-radius:var(--radius);padding:8px 16px;cursor:pointer}
+.btn-cancel-modal:hover{background:var(--surface2)}
+
+/* Events editor */
+.events-editor{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-top:4px}
+.event-row{display:grid;grid-template-columns:1fr 110px 70px 110px 80px 32px;gap:6px;padding:7px 10px;border-bottom:1px solid var(--border);align-items:center}
+.event-row:last-child{border-bottom:none}
+.event-row input,.event-row select{font-family:'DM Sans',sans-serif;font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--ink);outline:none;width:100%}
+.event-row input:focus,.event-row select:focus{border-color:var(--accent)}
+.btn-remove-event{background:transparent;border:none;color:var(--ink3);cursor:pointer;font-size:16px;padding:0;line-height:1;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius)}
+.btn-remove-event:hover{color:var(--danger);background:var(--danger-light)}
+.btn-add-event{width:100%;padding:7px;background:var(--bg);border:none;border-top:1px solid var(--border);font-family:'DM Sans',sans-serif;font-size:12px;color:var(--accent);cursor:pointer;font-weight:500}
+.btn-add-event:hover{background:var(--accent-light)}
+.events-header-row{display:grid;grid-template-columns:1fr 110px 70px 110px 80px 32px;gap:6px;padding:5px 10px;background:var(--bg);border-bottom:1px solid var(--border)}
+.events-header-row span{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3);font-weight:500}
+
+/* Detail modal */
+.detail-modal{max-width:640px}
+.detail-events{margin-top:1rem;display:flex;flex-direction:column;gap:6px}
+.detail-event-row{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:var(--radius);border-left:3px solid}
+.detail-event-date{font-weight:600;font-size:13px;color:var(--ink);min-width:90px}
+.detail-event-label{font-size:13px;color:var(--ink2);flex:1}
+.detail-event-type{font-size:10px;padding:2px 7px;border-radius:8px;font-weight:500;border:1px solid;white-space:nowrap}
+
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;font-size:13px;padding:9px 18px;border-radius:var(--radius);opacity:0;transition:all .25s;pointer-events:none;z-index:300;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>Case Dashboard</h1><p>NOLA Criminal Law</p></div>
+  <div class="header-right">
+    <button class="btn btn-outline" onclick="showICloudSync()">&#9729; Sync iCloud</button>
+    <button class="btn btn-outline" onclick="showImport()">Import JSON</button>
+    <button class="btn btn-outline" onclick="showICSImport()">&#128197; Import iCal</button>
+    <button class="btn btn-outline" onclick="exportJSON()">Export JSON</button>
+    <button class="btn btn-gold" onclick="openManualAdd()">+ Add case</button>
+  </div>
+</header>
+<main>
+  <div class="stats" id="stats"></div>
+  <div class="filter-bar" id="filter-bar">
+    <span class="filter-bar-label">Show:</span>
+    <button class="cat-btn-all" id="btn-all" onclick="toggleAll()">All</button>
+  </div>
+
+  <div class="panels-row">
+    <!-- Calendar full width on top -->
+    <div class="cal-panel">
+      <div class="cal-panel-header">
+        <h2>&#128197; Court calendar</h2>
+        <div class="cal-nav">
+          <button onclick="calScroll(-1)">&#8249;</button>
+          <span class="cal-range" id="cal-range"></span>
+          <button onclick="calScroll(1)">&#8250;</button>
+          <button onclick="calGoToday()" style="font-size:11px;padding:3px 8px">Today</button>
+        </div>
+      </div>
+      <div class="cal-scroll" id="cal-scroll"><div id="cal-grid"></div></div>
+    </div>
+
+    <!-- Court dates + Reminders side by side below -->
+    <div class="panels-bottom">
+      <div class="upcoming-panel">
+        <div class="upcoming-header">
+          <h2>&#9878; Court dates — 7 days</h2>
+          <span id="upcoming-count">Loading...</span>
+        </div>
+        <div id="upcoming-list"><div class="upcoming-empty">Loading...</div></div>
+      </div>
+      <div class="reminders-panel">
+        <div class="reminders-header">
+          <h2>&#9873; Reminders</h2>
+          <span id="reminders-count">Loading...</span>
+        </div>
+        <div id="reminders-list"><div class="upcoming-empty">Loading...</div></div>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="cases-header">
+    <h2>Cases <span id="case-count" style="font-size:14px;font-weight:400;color:var(--ink3)"></span></h2>
+    <div class="cases-controls">
+      <input type="text" class="search-box" id="search" placeholder="Search..." oninput="renderCards()"/>
+      <span class="sort-label">Sort:</span>
+      <button class="sort-btn" id="sort-btn-name" onclick="setSort('name')">Last name</button>
+      <button class="sort-btn active" id="sort-btn-date" onclick="setSort('date')">Next date</button>
+      <button class="sort-btn" id="sort-btn-type" onclick="setSort('type')">Case type</button>
+    </div>
+  </div>
+  <div class="case-rows" id="cards"></div>
+</main>
+<div id="modal-container"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_KEY = 'case_dashboard_v6';
+const SEED_KEY    = 'case_dashboard_seeded_v6';
+const SEED_DATA   = [{"id": "d_espinosa", "caseName": "Espinosa, Abraham", "caseType": "Orleans", "location": "Orleans Parish — Section M1", "summary": "Cruelty to animals charge. Client: Abraham Espinosa. Defense has video evidence showing defendant only tapped the horse on the side — no cruelty. Strong basis to challenge charge.", "events": [{"label": "Arraignment", "date": "2026-03-16", "type": "court", "location": "Section M1", "time": "10:00"}], "nextDate": "Arraignment — Mar 16, 2026", "createdAt": 1773439146842, "updatedAt": 1773440988241}, {"id": "d_1000", "caseName": "Lavontay Rowan", "caseType": "Orleans", "location": "", "summary": "Stage: 3 • Screening | Opened: Yesterday | Client: Lavontay Rowan", "nextDate": "None scheduled", "createdAt": 1773360000000, "updatedAt": 1773440988241, "events": []}, {"id": "d_1001", "caseName": "Mohammad Noubani", "caseType": "JP Criminal", "location": "", "summary": "Stage: 3 • Screening | Opened: 3/11/26 | Client: Cristina Santi, Lissette Wehbe", "nextDate": "Mohammad Noubani PE — Mar 27, 2026", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": [{"label": "Mohammad Noubani PE", "date": "2026-03-27", "type": "court"}]}, {"id": "d_1002", "caseName": "Kyle Goggans", "caseType": "Traffic/Municipal ORL", "location": "", "summary": "Stage: 2 • Pretrial | Opened: 3/11/26 | Client: Kyle Goggans", "nextDate": "Kyle Goggans DISC — Apr 24, 2026", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": [{"label": "Kyle Goggans DISC", "date": "2026-04-24", "type": "court"}]}, {"id": "d_1003", "caseName": "King Houston EXP", "caseType": "Expungement", "location": "Gretna City Court", "summary": "Gretna City Court expungement. Information needed to complete paperwork will come from JPSO background check once ordered. Client: King Houston.", "nextDate": "Order background: King Houston (Today)", "createdAt": 1773360000000, "updatedAt": 1773440857725, "events": [{"label": "Order background: King Houston", "date": "2026-03-16", "type": "reminder"}]}, {"id": "d_1004", "caseName": "Bradley Hauck", "caseType": "JP Criminal", "location": "", "summary": "Stage: 3 • Screening | Opened: 3/11/26 | Client: Mike Hauck, Otia Bowie", "nextDate": "Bradley Hauck STAT — Mar 19, 2026", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": [{"label": "Bradley Hauck STAT", "date": "2026-03-19", "type": "court"}]}, {"id": "d_1005", "caseName": "Michael Higgerson DWI", "caseType": "DWI", "location": "", "summary": "Stage: 1 • Arraignment | Opened: 3/11/26 | Client: Michael Higgerson", "nextDate": "Michael Higgerson STAT — Mar 16, 2026", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": [{"label": "Michael Higgerson STAT", "date": "2026-03-16", "type": "court"}]}, {"id": "d_1006", "caseName": "Alexander Yazigi EXP", "caseType": "Expungement", "location": "", "summary": "Stage: 5 • DA Cert | Opened: 3/11/26 | Client: Alexander Yazigi", "nextDate": "Order DA Cert: Yazigi (Yesterday)", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": []}, {"id": "d_1007", "caseName": "Adriane Simien", "caseType": "Orleans", "location": "", "summary": "Stage: 1 • Pre-Arrest | Opened: 3/11/26 | Client: Aaron Rives, Adriene Simien", "nextDate": "None scheduled", "createdAt": 1773360000000, "updatedAt": 1773440988241, "events": []}, {"id": "d_1008", "caseName": "Jeremy Bullard", "caseType": "Criminal/Traf Other", "location": "", "summary": "Stage: 1 • Pre-Arrest | Opened: 3/11/26 | Client: Ladasha Bolden", "nextDate": "None scheduled", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": []}, {"id": "d_1009", "caseName": "Tanya Johnson", "caseType": "Criminal/Traf Other", "location": "", "summary": "Stage: 3 • Screening | Opened: 3/5/26 | Client: Tanya Johnson", "nextDate": "None scheduled", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": []}, {"id": "d_1010", "caseName": "Sarah Burrell", "caseType": "Criminal/Traf Other", "location": "", "summary": "Stage: 5 • Pretrial | Opened: 3/5/26 | Client: Elizabeth Bryans", "nextDate": "Sarah Burrell PRT — May 12, 2026", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": [{"label": "Sarah Burrell PRT", "date": "2026-05-12", "type": "court"}]}, {"id": "d_1011", "caseName": "Jeremy Legania DWI", "caseType": "DWI", "location": "", "summary": "Stage: 1 • Arraignment | Opened: 3/5/26 | Client: Jeremy Legania", "nextDate": "Jeremy Legania ARR — Apr 15, 2026", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": [{"label": "Jeremy Legania ARR", "date": "2026-04-15", "type": "court"}]}, {"id": "d_1012", "caseName": "Renell Gibbs EXP", "caseType": "Expungement", "location": "", "summary": "Stage: 5 • DA Cert | Opened: 2/23/26", "nextDate": "DA Cert: Gibbs (Today)", "createdAt": 1773360000000, "updatedAt": 1773440031370, "events": [{"label": "DA Cert: Gibbs", "date": "2026-03-16", "type": "reminder"}]}, {"id": "d_1013", "caseName": "Jose Nunez JP TRAF", "caseType": "JP Traf", "location": "", "summary": "Opened: 2/18/26 | Client: Jose Nunez", "nextDate": "Jose Nunez S1414217 \\A\\\"\" — Apr 27, 2026", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": [{"label": "Jose Nunez S1414217 \\A\\\"\"", "date": "2026-04-27", "type": "court"}]}, {"id": "d_1014", "caseName": "Patrick Pichoff", "caseType": "Appeal/PC", "location": "", "summary": "Opened: 2/18/26 | Client: Claudia Rivera", "nextDate": "None scheduled", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": []}, {"id": "d_1015", "caseName": "Jodi McEnery", "caseType": "Federal Criminal", "location": "", "summary": "Opened: 2/18/26 | Client: Jodi McEnery", "nextDate": "None scheduled", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": []}, {"id": "d_1016", "caseName": "Ryan Couget EXP", "caseType": "Expungement", "location": "", "summary": "Stage: 1 • Order Records | Opened: 2/18/26 | Client: Richard Couget", "nextDate": "None scheduled", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": []}, {"id": "d_1017", "caseName": "Nelson Banks CJA", "caseType": "CJA", "location": "", "summary": "Stage: 3 • Discovery | Opened: 2/18/26 | Client: ECF, Lakeisha Williams, Sarah Dawkins", "nextDate": "Nelson Banks PRT — Apr 07, 2026", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": [{"label": "Nelson Banks PRT", "date": "2026-04-07", "type": "court"}]}, {"id": "d_1018", "caseName": "Nick Waguespack", "caseType": "Criminal/Traf Other", "location": "", "summary": "Stage: 5 • Pretrial | Opened: 2/18/26 | Client: Connie Aucoin, Nick Waguespack", "nextDate": "Nick Waguespack MOT — Mar 24, 2026", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": [{"label": "Nick Waguespack MOT", "date": "2026-03-24", "type": "court"}]}, {"id": "d_1019", "caseName": "Max Lee-Sarnoff", "caseType": "Traffic/Municipal ORL", "location": "", "summary": "Stage: 2 • Pretrial | Opened: 2/11/26 | Client: Ellen Lee, Jon Sarnoff, Margaret Pitre, Max Lee-Sarnoff", "nextDate": "None scheduled", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": []}, {"id": "d_1020", "caseName": "Gregory Wright EXP", "caseType": "Expungement", "location": "", "summary": "Stage: 5 • DA Cert | Opened: 2/6/26 | Client: Gregory Wright", "nextDate": "None scheduled", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": []}, {"id": "d_1021", "caseName": "Damion McFarlane", "caseType": "Criminal/Traf Other", "location": "", "summary": "Stage: 3 • Screening | Opened: 2/2/26 | Client: Damion McFarland", "nextDate": "None scheduled", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": []}, {"id": "d_1022", "caseName": "Jeffrey Durell", "caseType": "JP Criminal", "location": "", "summary": "Stage: 3 • Screening | Opened: 1/30/26 | Client: Ariane Veal, Michael Morales", "nextDate": "Durrell Jeffrey STAT — Apr 09, 2026", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": [{"label": "Durrell Jeffrey STAT", "date": "2026-04-09", "type": "court"}]}, {"id": "d_1023", "caseName": "Joshua Jackson", "caseType": "Orleans", "location": "", "summary": "Stage: 3 • Screening | Opened: 1/29/26 | Client: Courtney Jackson, Joseph Larre, Joshua Jackson", "nextDate": "Joshua Jackson RTSC — Mar 26, 2026", "createdAt": 1773360000000, "updatedAt": 1773440988241, "events": [{"label": "Joshua Jackson RTSC", "date": "2026-03-26", "type": "court"}]}, {"id": "d_1024", "caseName": "Erkhan Tuimaada MUN", "caseType": "Traffic/Municipal ORL", "location": "", "summary": "Stage: 3 • Trial | Opened: 1/27/26 | Client: Erkhan Tuimaada", "nextDate": "Erkhan Tuimaada TRL — Apr 28, 2026", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": [{"label": "Erkhan Tuimaada TRL", "date": "2026-04-28", "type": "court"}]}, {"id": "d_1025", "caseName": "Clarence \\Jamal\\\" Clark\"", "caseType": "Orleans", "location": "", "summary": "Stage: 3 • Screening | Opened: 1/26/26 | Client: Aaron Rives, Jamal Clark", "nextDate": "None scheduled", "createdAt": 1773360000000, "updatedAt": 1773440988241, "events": []}, {"id": "d_1026", "caseName": "Ava Amundsen", "caseType": "Criminal/Traf Other", "location": "Amite", "summary": "Stage: 3 • Screening | Opened: 1/26/26 | Client: Ava Amundsen", "nextDate": "Court — May 05, 2026", "createdAt": 1773360000000, "updatedAt": 1773438072615, "events": [{"label": "Court", "date": "2026-05-05", "type": "court"}]}, {"id": "d_1027", "caseName": "Kayleigh Fowler DWI", "caseType": "DWI", "location": "", "summary": "Stage: 1 • Arraignment | Opened: 1/23/26 | Client: Kayleigh Fowler", "nextDate": "Kayleigh Fowler DISC — Apr 22, 2026", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": [{"label": "Kayleigh Fowler DISC", "date": "2026-04-22", "type": "court"}]}, {"id": "d_1028", "caseName": "Natalie Jenks DWI", "caseType": "DWI", "location": "", "summary": "Stage: 1 • Arraignment | Opened: 1/19/26 | Client: Natalie Jenks", "nextDate": "Natalie Jenks DISC — Apr 20, 2026", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": [{"label": "Natalie Jenks DISC", "date": "2026-04-20", "type": "court"}]}, {"id": "d_1029", "caseName": "Owen Ziegler EXP", "caseType": "Expungement", "location": "", "summary": "Stage: 5 • DA Cert | Opened: 1/19/26 | Client: Owen Ziegler", "nextDate": "None scheduled", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": []}, {"id": "d_1030", "caseName": "Mark Lastrapes", "caseType": "Orleans", "location": "", "summary": "Stage: 3 • Screening | Opened: 12/8/25 | Client: Joseph Larre, Mark Lastrapes", "nextDate": "None scheduled", "createdAt": 1773360000000, "updatedAt": 1773440988241, "events": []}, {"id": "d_1031", "caseName": "Brandon Butler CJA", "caseType": "CJA", "location": "", "summary": "Stage: 3 • Discovery | Opened: 12/5/25 | Client: David Olasky, ECF, Paul Hubbell", "nextDate": "None scheduled", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": []}, {"id": "d_1032", "caseName": "Todd Marshall DWI", "caseType": "DWI", "location": "", "summary": "Stage: 2 • Pretrial | Opened: 12/5/25 | Client: Todd Marshall", "nextDate": "Todd Marshall ADMIN — Mar 25, 2026", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": [{"label": "Todd Marshall ADMIN", "date": "2026-03-25", "type": "court"}]}, {"id": "d_1033", "caseName": "Sherri Montz JP Traf", "caseType": "JP Traf", "location": "", "summary": "Stage: 1 • Arraignment | Opened: 11/21/25 | Client: Sherri Montz", "nextDate": "Sherri Montz F2302156 — Mar 23, 2026", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": [{"label": "Sherri Montz F2302156", "date": "2026-03-23", "type": "court"}]}, {"id": "d_1034", "caseName": "Marshall Rehage", "caseType": "JP Criminal", "location": "", "summary": "Stage: 5 • Pretrial | Opened: 11/20/25 | Client: Marshall Rehage", "nextDate": "Marshall Rehage PRT — Apr 06, 2026", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": [{"label": "Marshall Rehage PRT", "date": "2026-04-06", "type": "court"}]}, {"id": "d_1035", "caseName": "Jacob Wilson", "caseType": "Criminal/Traf Other", "location": "", "summary": "Stage: 5 • Pretrial | Opened: 11/17/25 | Client: Jaedyn Edwards, Jayla Wilson, Morgan Gravois", "nextDate": "Jacob Wilson PRT — May 06, 2026", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": [{"label": "Jacob Wilson PRT", "date": "2026-05-06", "type": "court"}]}, {"id": "d_1036", "caseName": "Cassandra Kretz TRAF", "caseType": "Traffic/Municipal ORL", "location": "", "summary": "Stage: 1 • Arraignment | Opened: 11/10/25 | Client: Diane Kretz", "nextDate": "Cassandra Kretz 25T19397 — Apr 22, 2026", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": [{"label": "Cassandra Kretz 25T19397", "date": "2026-04-22", "type": "court"}]}, {"id": "d_1037", "caseName": "Maurice Robertson", "caseType": "Orleans", "location": "", "summary": "Stage: 5 • Pretrial | Opened: 11/3/25 | Client: Jovannate Brown", "nextDate": "Maurice Robertson DISC — Mar 24, 2026", "createdAt": 1773360000000, "updatedAt": 1773440988241, "events": [{"label": "Maurice Robertson DISC", "date": "2026-03-24", "type": "court"}]}, {"id": "d_1038", "caseName": "Eduardo Barahona", "caseType": "Criminal/Traf Other", "location": "", "summary": "Stage: 4 • Pre-Diversion | Opened: 10/15/25 | Client: Eduardo Barahona", "nextDate": "Eduardo Barahona — Mar 30, 2026", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": [{"label": "Eduardo Barahona", "date": "2026-03-30", "type": "court"}]}, {"id": "d_1039", "caseName": "Tristan Jernigan MUN FILE", "caseType": "Traffic/Municipal ORL", "location": "", "summary": "Stage: 2 • Pretrial | Opened: 9/17/25 | Client: Chasi Jernigan", "nextDate": "Tristan Jernigan MUN — Apr 28, 2026", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": [{"label": "Tristan Jernigan MUN", "date": "2026-04-28", "type": "court"}]}, {"id": "d_1040", "caseName": "Timothy Lewis", "caseType": "JP Criminal", "location": "", "summary": "Stage: 1 • Pre-Arrest | Opened: 9/1/25 | Client: Timothy Lewis", "nextDate": "None scheduled", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": []}, {"id": "d_1041", "caseName": "Jermaine Brown EXP", "caseType": "Expungement", "location": "", "summary": "Stage: 6 • Ready to File EXP | Opened: 9/1/25 | Client: Jermaine Brown", "nextDate": "Draft EXP: Brown", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": [{"label": "Draft EXP: Brown", "date": "", "type": "reminder"}]}, {"id": "d_1042", "caseName": "Kamaii Dunson", "caseType": "JP Criminal", "location": "", "summary": "Stage: 3 • Screening | Opened: 8/25/25 | Client: Kamaii Dunson, Paige Cline", "nextDate": "Kamaii Dunson STAT — May 01, 2026", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": [{"label": "Kamaii Dunson STAT", "date": "2026-05-01", "type": "court"}]}, {"id": "d_1043", "caseName": "Eugene Beckwith DWI", "caseType": "DWI", "location": "", "summary": "Stage: 1 • Arraignment | Opened: 8/25/25 | Client: Eugene Beckwith", "nextDate": "Eugene Beckwith DISC — Mar 20, 2026", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": [{"label": "Eugene Beckwith DISC", "date": "2026-03-20", "type": "court"}]}, {"id": "d_1044", "caseName": "Montrell Carmouche", "caseType": "JP Criminal", "location": "", "summary": "Stage: 7 • Motions/Trial | Opened: 8/12/25 | Client: Aaron Rives, Montrell Carmouche, Piper Didier", "nextDate": "None scheduled", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": []}, {"id": "d_1045", "caseName": "Connie Walker EXP", "caseType": "Expungement", "location": "", "summary": "Stage: 5 • DA Cert | Opened: 8/8/25 | Client: Connie Walker", "nextDate": "None scheduled", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": []}, {"id": "d_1046", "caseName": "Tyleber Gross DWI", "caseType": "DWI", "location": "", "summary": "Stage: 1 • Arraignment | Opened: 8/7/25 | Client: Tyleber Gross", "nextDate": "Tyleber Gross TRL — May 21, 2026", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": [{"label": "Tyleber Gross TRL", "date": "2026-05-21", "type": "court"}]}, {"id": "d_1047", "caseName": "Judith Wangelin JP TRAF", "caseType": "JP Traf", "location": "", "summary": "Stage: 1 • Arraignment | Opened: 8/4/25 | Client: Bob Roudon", "nextDate": "Follow Up with Wangelin 1st Par DA (3/23/26)", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": []}, {"id": "d_1048", "caseName": "Jason Slaughter CJA", "caseType": "CJA", "location": "", "summary": "Stage: 2 • Intake/Detention | Opened: 8/1/25 | Client: Jason Slaughter, Lauren Sarver", "nextDate": "Jason Slaughter PRT — Apr 16, 2026", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": [{"label": "Jason Slaughter PRT", "date": "2026-04-16", "type": "court"}]}, {"id": "d_1049", "caseName": "Ashley Farrar EXP", "caseType": "Expungement", "location": "", "summary": "Stage: 9 • EXP Granted waiting LSP | Opened: 7/24/25 | Client: Ashley Farrar", "nextDate": "None scheduled", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": []}, {"id": "d_1050", "caseName": "Jaequan Bailey CJA", "caseType": "CJA", "location": "", "summary": "Stage: 3 • Discovery | Opened: 6/30/25 | Client: ECF, Troy Bell", "nextDate": "Jaequan Bailey PRT — Apr 28, 2026", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": [{"label": "Jaequan Bailey PRT", "date": "2026-04-28", "type": "court"}]}, {"id": "d_1051", "caseName": "Melcolm Dolliole CJA", "caseType": "CJA", "location": "", "summary": "Stage: 4 • Pre-Trial/Plea | Opened: 6/17/25 | Client: Brittany Reed, ECF, Troy Bell", "nextDate": "Melcolm Dolliole PRT — Apr 01, 2026", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": [{"label": "Melcolm Dolliole PRT", "date": "2026-04-01", "type": "court"}]}, {"id": "d_1052", "caseName": "Maynor Oviedo DWI", "caseType": "JP Traf", "location": "", "summary": "Stage: 1 • Arraignment | Opened: 6/13/25 | Client: Maynor Ovideo", "nextDate": "Maynor Oviedo TRL — Mar 19, 2026", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": [{"label": "Maynor Oviedo TRL", "date": "2026-03-19", "type": "court"}]}, {"id": "d_1053", "caseName": "Jennifer McCain", "caseType": "DWI", "location": "", "summary": "Stage: 5 • Pretrial | Opened: 6/10/25 | Client: Jennifer McCain", "nextDate": "None scheduled", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": []}, {"id": "d_1054", "caseName": "Tayanika Powell CJA", "caseType": "CJA", "location": "", "summary": "Stage: 1 • Pre-Indictment | Opened: 5/27/25 | Client: Edward Rivera, Tanyaneeka Powell", "nextDate": "Tanyaneeka Powell SENT — Apr 28, 2026", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": [{"label": "Tanyaneeka Powell SENT", "date": "2026-04-28", "type": "court"}]}, {"id": "d_1055", "caseName": "Thomas Anderson", "caseType": "Orleans", "location": "", "summary": "Stage: 1 • Pre-Arrest | Opened: 5/13/25 | Client: Brandon McDonald , Thomas Anderson", "nextDate": "None scheduled", "createdAt": 1773360000000, "updatedAt": 1773440988241, "events": []}, {"id": "d_1056", "caseName": "Eric Noble", "caseType": "JP Criminal", "location": "", "summary": "Stage: 7 • Motions/Trial | Opened: 4/1/25 | Client: Eric Noble, Erich Cathey", "nextDate": "None scheduled", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": []}, {"id": "d_1057", "caseName": "Kevin Wehlen DWI", "caseType": "DWI", "location": "", "summary": "Stage: 3 • Trial | Opened: 2/23/25", "nextDate": "Kevin Wehlen TRL — Mar 23, 2026", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": [{"label": "Kevin Wehlen TRL", "date": "2026-03-23", "type": "court"}]}, {"id": "d_1058", "caseName": "Leiman Brown", "caseType": "Criminal/Traf Other", "location": "", "summary": "Stage: 3 • Screening | Opened: 1/28/25 | Client: David Craig, Leiman Brown", "nextDate": "Leiman Brown — May 20, 2026", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": [{"label": "Leiman Brown", "date": "2026-05-20", "type": "court"}]}, {"id": "d_1059", "caseName": "Eric Williams DWI", "caseType": "DWI", "location": "", "summary": "Stage: 2 • Pretrial | Opened: 11/5/24 | Client: Eric Williams", "nextDate": "None scheduled", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": []}, {"id": "d_1060", "caseName": "Rafael Betanco", "caseType": "JP Criminal", "location": "", "summary": "Stage: 5 • Pretrial | Opened: 8/29/24 | Client: Amber Parks, Mother Betanco, Otia Bowie, Rachel Warren, Rafael Betanco", "nextDate": "Rafael Betanco DIV STAT — Jul 06, 2026", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": [{"label": "Rafael Betanco DIV STAT", "date": "2026-07-06", "type": "court"}]}, {"id": "d_1061", "caseName": "Mahmoud Alhattab RET", "caseType": "Federal Criminal", "location": "", "summary": "Stage: 1 • Pre-Indictment | Opened: 3/27/24 | Client: Chandra Menon, Mahmoud Alhattab", "nextDate": "Mahmoud Alhattab PRT — May 07, 2026", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": [{"label": "Mahmoud Alhattab PRT", "date": "2026-05-07", "type": "court"}]}, {"id": "d_1062", "caseName": "Dornelius Brown CJA", "caseType": "CJA", "location": "", "summary": "Stage: 3 • Discovery | Opened: 1/4/24 | Client: ECF, Nick Rayburn", "nextDate": "Dornelius Brown SENT — Apr 30, 2026", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": [{"label": "Dornelius Brown SENT", "date": "2026-04-30", "type": "court"}]}, {"id": "d_1063", "caseName": "Mark Arenales", "caseType": "JP Criminal", "location": "", "summary": "Stage: 7 • Motions/Trial | Opened: 2/3/23 | Client: Mark Arenales", "nextDate": "None scheduled", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": []}, {"id": "cal_1064", "caseName": "Lynne Kueck FA", "caseType": "Traffic/Municipal ORL", "location": "", "summary": "Calendar-only entry | Lynne Kueck FA", "nextDate": "Lynne Kueck FA — Mar 16, 2026", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": [{"label": "Lynne Kueck FA", "date": "2026-03-16", "type": "court"}]}, {"id": "cal_1065", "caseName": "Natalie Jenks F1847884", "caseType": "JP Traf", "location": "", "summary": "Calendar-only entry | Natalie Jenks F1847884", "nextDate": "Natalie Jenks F1847884 — Apr 23, 2026", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": [{"label": "Natalie Jenks F1847884", "date": "2026-04-23", "type": "court"}]}, {"id": "cal_1066", "caseName": "Tanyaneeka Powell SENT", "caseType": "Federal Criminal", "location": "", "summary": "Calendar-only entry | Tanyaneeka Powell SENT", "nextDate": "Tanyaneeka Powell SENT — Apr 28, 2026", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": [{"label": "Tanyaneeka Powell SENT", "date": "2026-04-28", "type": "court"}]}, {"id": "cal_1067", "caseName": "Patrick Guidry PRT", "caseType": "Traffic/Municipal ORL", "location": "", "summary": "Calendar-only entry | Patrick Guidry PRT", "nextDate": "Patrick Guidry PRT — May 05, 2026", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": [{"label": "Patrick Guidry PRT", "date": "2026-05-05", "type": "court"}]}, {"id": "cal_1068", "caseName": "Eric Theard", "caseType": "Traffic/Municipal ORL", "location": "", "summary": "Calendar-only entry | Dazia Faulk TRAF", "nextDate": "Dazia Faulk TRAF — May 13, 2026", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": [{"label": "Dazia Faulk TRAF", "date": "2026-05-13", "type": "court"}]}, {"id": "cal_1069", "caseName": "Jason Slaughter SENT", "caseType": "Federal Criminal", "location": "", "summary": "Calendar-only entry | Jason Slaughter SENT", "nextDate": "Jason Slaughter SENT — Jun 02, 2026", "createdAt": 1773360000000, "updatedAt": 1773360000000, "events": [{"label": "Jason Slaughter SENT", "date": "2026-06-02", "type": "court"}]}];
+
+const CAT_COLORS = {
+  'DWI':                  {bar:'#E8650A',bg:'#FEF0E6',border:'#F5C09A',text:'#8B3A00'},
+  'Expungement':          {bar:'#E91E8C',bg:'#FCE4EC',border:'#F48FB1',text:'#880037'},
+  'Orleans':              {bar:'#9C1414',bg:'#FFEBEE',border:'#EF9A9A',text:'#6B0000'},
+  'CJA':                  {bar:'#2E7D32',bg:'#E8F5E9',border:'#A5D6A7',text:'#1B5E20'},
+  'Federal Criminal':     {bar:'#6A1B9A',bg:'#F3E5F5',border:'#CE93D8',text:'#4A148C'},
+  'Traffic/Municipal ORL':{bar:'#1565C0',bg:'#E3F2FD',border:'#90CAF9',text:'#0D47A1'},
+  'JP Traf':              {bar:'#00897B',bg:'#E0F2F1',border:'#80CBC4',text:'#004D40'},
+  'JP Criminal':          {bar:'#5C4033',bg:'#EFEBE9',border:'#BCAAA4',text:'#3E2723'},
+  'Criminal/Traf Other':  {bar:'#455A64',bg:'#ECEFF1',border:'#B0BEC5',text:'#263238'},
+  'Appeal/PC':            {bar:'#4A148C',bg:'#EDE7F6',border:'#B39DDB',text:'#311B92'},
+};
+const CASE_TYPES = Object.keys(CAT_COLORS);
+let activeCategories = new Set();
+let cases = [], editId = null;
+
+function getCatColor(type){ return CAT_COLORS[type]||{bar:'#9B9590',bg:'#F1EFE8',border:'#D3D1C7',text:'#5C5750'}; }
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,5); }
+function fmtDate(ts){ return new Date(ts).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }
+function fmtEventDate(ds){
+  if(!ds) return '';
+  const d = new Date(ds+'T12:00:00');
+  return isNaN(d) ? ds : d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+}
+function fmtEventTime(t){
+  if(!t) return '';
+  const [h,m]=t.split(':').map(Number);
+  if(isNaN(h)) return t;
+  const ampm=h>=12?'PM':'AM';
+  const hr=h%12||12;
+  return `${hr}:${String(m).padStart(2,'0')} ${ampm}`;
+}
+
+// ── Storage ───────────────────────────────────────────
+const SEED_HASH = '187f58c63e';
+const SEED_HASH_KEY = 'case_dashboard_seed_hash_v6';
+
+async function loadCases(){
+  let storedHash = '';
+  try{ const h=(()=>{try{const _v=localStorage.getItem(SEED_HASH_KEY);return _v?{value:_v}:null;}catch(e){return null;}})(); storedHash=h&&h.value?h.value:''; }catch(e){}
+
+  let stored = null;
+  try{ const r=(()=>{try{const _v=localStorage.getItem(STORAGE_KEY);return _v?{value:_v}:null;}catch(e){return null;}})(); stored=r&&r.value?JSON.parse(r.value):null; }catch(e){}
+
+  if(!stored){
+    // First load — use seed data as-is
+    cases=JSON.parse(JSON.stringify(SEED_DATA));
+    await saveCases();
+    try{ (()=>{try{localStorage.setItem(SEED_HASH_KEY,SEED_HASH);}catch(e){}})(); (()=>{try{localStorage.setItem(SEED_KEY,'1');}catch(e){}})(); }catch(e){}
+  } else if(storedHash !== SEED_HASH){
+    // Seed changed — merge: update existing cases from seed, preserve user edits
+    const seedMap = {};
+    SEED_DATA.forEach(c=>seedMap[c.id]=c);
+    cases = stored.map(c=>{
+      const s = seedMap[c.id];
+      if(!s) return c; // user-added case, keep as-is
+      // Merge: seed wins on events/dates/location; summary goes to whichever was updated more recently
+      const useSeedSummary = (s.updatedAt||0) > (c.updatedAt||0);
+      return {...s, summary: useSeedSummary ? s.summary : (c.summary||s.summary), updatedAt: Math.max(c.updatedAt||0, s.updatedAt||0)};
+    });
+    // Add any new seed cases not in stored
+    stored.forEach((c,i)=>{ if(!seedMap[c.id]) cases.push(c); });
+    SEED_DATA.forEach(s=>{ if(!stored.find(c=>c.id===s.id)) cases.unshift(s); });
+    await saveCases();
+    try{ (()=>{try{localStorage.setItem(SEED_HASH_KEY,SEED_HASH);}catch(e){}})(); }catch(e){}
+  } else {
+    // No seed change — use stored data as-is
+    cases = stored;
+  }
+  buildFilterBar(); renderAll();
+}
+async function saveCases(){
+  try{ localStorage.setItem(STORAGE_KEY,JSON.stringify(cases)); }catch(e){}
+}
+
+// ── Filter bar ────────────────────────────────────────
+function buildFilterBar(){
+  const bar=document.getElementById('filter-bar');
+  bar.querySelectorAll('.cat-btn').forEach(b=>b.remove());
+  const none=activeCategories.size===0;
+  CASE_TYPES.forEach(type=>{
+    const col=getCatColor(type), active=!none&&activeCategories.has(type);
+    const btn=document.createElement('button');
+    btn.className='cat-btn'+(active?'':' inactive');
+    btn.dataset.type=type;
+    btn.style.cssText=active?`background:${col.bg};color:${col.text};border-color:${col.border}`:'';
+    const dot=document.createElement('span'); dot.className='dot'; dot.style.background=active?col.bar:'';
+    btn.appendChild(dot); btn.appendChild(document.createTextNode(type));
+    btn.onclick=()=>toggleCategory(type); bar.appendChild(btn);
+  });
+  document.getElementById('btn-all').className='cat-btn-all'+(none?'':' inactive');
+}
+function toggleCategory(type){
+  if(activeCategories.has(type)) activeCategories.delete(type);
+  else activeCategories.add(type);
+  buildFilterBar(); renderAll();
+}
+function toggleAll(){ activeCategories=new Set(); buildFilterBar(); renderAll(); }
+function soloFilter(type){ activeCategories=new Set([type]); buildFilterBar(); renderAll(); }
+function caseVisible(c){ return activeCategories.size===0||activeCategories.has(c.caseType); }
+
+// ── Event helpers ─────────────────────────────────────
+function getEvents(c){ return Array.isArray(c.events)?c.events:[]; }
+
+function getAllVisibleEvents(){
+  // Returns court/deadline events only (reminders shown separately)
+  const today=new Date(); today.setHours(0,0,0,0);
+  const cut=new Date(today); cut.setDate(today.getDate()+180);
+  const result=[];
+  cases.forEach(c=>{
+    if(!caseVisible(c)) return;
+    getEvents(c).forEach(ev=>{
+      if(!ev.date) return;
+      if(ev.type==='reminder') return; // reminders excluded from calendar
+      const d=new Date(ev.date+'T12:00:00');
+      if(isNaN(d)||d<today||d>cut) return;
+      result.push({caseId:c.id,caseName:c.caseName,caseType:c.caseType,
+        date:d,label:ev.label||'Court date',eventType:ev.type||'court',
+        time:ev.time||'',location:ev.location||''});
+    });
+  });
+  return result;
+}
+
+// ── Stats ─────────────────────────────────────────────
+function renderStats(){
+  const n=k=>cases.filter(c=>c.caseType===k).length;
+  const visible=cases.filter(c=>caseVisible(c)).length;
+  const up=getUpcoming7().length; // court dates only
+  document.getElementById('stats').innerHTML=`
+    <div class="stat"><div class="stat-num" style="color:var(--accent)">${visible}</div><div class="stat-label">Showing</div></div>
+    <div class="stat" onclick="soloFilter('Orleans')"><div class="stat-num" style="color:#B71C1C">${n('Orleans')}</div><div class="stat-label">Crim ORL</div></div>
+    <div class="stat" onclick="soloFilter('JP Criminal')"><div class="stat-num" style="color:#5C4033">${n('JP Criminal')}</div><div class="stat-label">JP Crim</div></div>
+    <div class="stat" onclick="soloFilter('DWI')"><div class="stat-num" style="color:#E8650A">${n('DWI')}</div><div class="stat-label">DWI</div></div>
+    <div class="stat" onclick="soloFilter('CJA')"><div class="stat-num" style="color:#2E7D32">${n('CJA')}</div><div class="stat-label">CJA</div></div>
+    <div class="stat" onclick="soloFilter('Federal Criminal')"><div class="stat-num" style="color:#6A1B9A">${n('Federal Criminal')}</div><div class="stat-label">Federal</div></div>
+    <div class="stat" onclick="soloFilter('Expungement')"><div class="stat-num" style="color:#C2185B">${n('Expungement')}</div><div class="stat-label">Expunge</div></div>
+    <div class="stat"><div class="stat-num" style="color:#1565C0">${n('Traffic/Municipal ORL')+n('JP Traf')+n('Criminal/Traf Other')}</div><div class="stat-label">Traffic/Mun</div></div>
+    <div class="stat"><div class="stat-num" style="color:var(--danger)">${up}</div><div class="stat-label">Next 7 Days</div></div>`;
+}
+
+// ── 7-day list ────────────────────────────────────────
+function getUpcoming7(){
+  const today=new Date(); today.setHours(0,0,0,0);
+  const cut=new Date(today); cut.setDate(today.getDate()+7);
+  const result=[];
+  cases.forEach(c=>{
+    if(!caseVisible(c)) return;
+    getEvents(c).forEach(ev=>{
+      if(!ev.date) return;
+      if(ev.type==='reminder') return; // reminders go to separate pane
+      const d=new Date(ev.date+'T12:00:00');
+      if(isNaN(d)||d<today||d>cut) return;
+      const diff=Math.round((d-today)/86400000);
+      result.push({caseId:c.id,caseName:c.caseName,caseType:c.caseType,
+        date:d,diffDays:diff,label:ev.label||'Court date',eventType:ev.type||'court',
+        time:ev.time||'',location:ev.location||''});
+    });
+  });
+  return result.sort((a,b)=>a.date-b.date);
+}
+
+function getAllReminders(){
+  // All future reminders across all visible cases, no date cutoff
+  const today=new Date(); today.setHours(0,0,0,0);
+  const result=[];
+  cases.forEach(c=>{
+    if(!caseVisible(c)) return;
+    getEvents(c).forEach(ev=>{
+      if(ev.type!=='reminder') return;
+      if(!ev.date) return;
+      const d=new Date(ev.date+'T12:00:00');
+      if(isNaN(d)||d<today) return;
+      const diff=Math.round((d-today)/86400000);
+      result.push({caseId:c.id,caseName:c.caseName,caseType:c.caseType,
+        date:d,diffDays:diff,label:ev.label||'Reminder',eventType:'reminder',
+        time:ev.time||'',location:ev.location||''});
+    });
+  });
+  return result.sort((a,b)=>a.date-b.date);
+}
+
+function renderUpcoming(){
+  const items=getUpcoming7();
+  document.getElementById('upcoming-count').textContent=items.length
+    ?items.length+' event'+(items.length>1?'s':''):'None';
+  if(!items.length){
+    document.getElementById('upcoming-list').innerHTML='<div class="upcoming-empty">No dates in the next 7 days.</div>';
+    return;
+  }
+  document.getElementById('upcoming-list').innerHTML=items.map(ev=>{
+    const col=getCatColor(ev.caseType);
+    const nc=ev.diffDays===0?'today':ev.diffDays<=3?'soon':'later';
+    const dl=ev.diffDays===0?'Today':ev.diffDays===1?'day':'days';
+    const ds=ev.date.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+    return `<div class="upcoming-item" onclick="viewCase('${ev.caseId}')">
+      <div class="upcoming-days">
+        <div class="upcoming-days-num ${nc}">${ev.diffDays===0?'!':ev.diffDays}</div>
+        <div class="upcoming-days-label">${dl}</div>
+      </div>
+      <div class="upcoming-divider"></div>
+      <div class="upcoming-info">
+        <div class="upcoming-case">${esc(getDisplayName(ev.caseName))}</div>
+        <div class="upcoming-event">${esc(ev.label)}${ev.time?' '+fmtEventTime(ev.time):''} &middot; ${ds}</div>
+      </div>
+      <div class="upcoming-type-dot" style="background:${col.bar}"></div>
+    </div>`;
+  }).join('');
+  renderReminders();
+}
+
+function renderReminders(){
+  const items=getAllReminders();
+  document.getElementById('reminders-count').textContent=items.length
+    ?items.length+' reminder'+(items.length>1?'s':''):'None';
+  if(!items.length){
+    document.getElementById('reminders-list').innerHTML='<div class="upcoming-empty">No upcoming reminders.</div>';
+    return;
+  }
+  document.getElementById('reminders-list').innerHTML=items.map(ev=>{
+    const col=getCatColor(ev.caseType);
+    const nc=ev.diffDays===0?'today':ev.diffDays<=3?'soon':'later';
+    const dl=ev.diffDays===0?'Today':ev.diffDays===1?'day':'days';
+    const ds=ev.date.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    return `<div class="upcoming-item" onclick="viewCase('${ev.caseId}')">
+      <div class="upcoming-days">
+        <div class="upcoming-days-num ${nc}">${ev.diffDays===0?'!':ev.diffDays}</div>
+        <div class="upcoming-days-label">${dl}</div>
+      </div>
+      <div class="upcoming-divider"></div>
+      <div class="upcoming-info">
+        <div class="upcoming-case">${esc(getDisplayName(ev.caseName))}</div>
+        <div class="upcoming-event">${esc(ev.label)} &middot; ${ds}</div>
+      </div>
+      <div class="upcoming-type-dot" style="background:#B8860B" title="Reminder"></div>
+    </div>`;
+  }).join('');
+}
+
+// ── Weekly calendar ───────────────────────────────────
+let calWeekOffset=0;
+function calGoToday(){ calWeekOffset=0; renderCal(); }
+function calScroll(dir){ calWeekOffset=Math.max(0,calWeekOffset+dir*2); renderCal(); }
+
+function renderCal(){
+  const today=new Date(); today.setHours(0,0,0,0);
+  const dow=(today.getDay()+6)%7;
+  const startOfWeek=new Date(today);
+  startOfWeek.setDate(today.getDate()-dow+calWeekOffset*7);
+  const WEEKS=26;
+  const endDate=new Date(startOfWeek); endDate.setDate(startOfWeek.getDate()+WEEKS*7-1);
+
+  const fmt=d=>d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  document.getElementById('cal-range').textContent=fmt(startOfWeek)+' – '+fmt(endDate);
+
+  // Build event map by date key
+  const allEvs=getAllVisibleEvents();
+  const evMap={};
+  allEvs.forEach(ev=>{
+    const key=ev.date.toISOString().slice(0,10);
+    if(!evMap[key]) evMap[key]=[];
+    evMap[key].push(ev);
+  });
+
+  const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  let html='';
+
+  // Sticky header row
+  html+='<div style="display:grid;grid-template-columns:32px repeat(7,1fr);position:sticky;top:0;z-index:3;background:var(--bg);border-bottom:2px solid var(--border)">';
+  html+='<div style="padding:5px 2px;font-size:9px;color:var(--ink3);font-weight:500;text-align:center;border-right:1px solid var(--border)">Wk</div>';
+  DAYS.forEach((d,i)=>{
+    html+=`<div style="padding:5px 4px;text-align:center;font-size:10px;color:var(--ink3);font-weight:500;${i<6?'border-right:1px solid var(--border)':''}">${d}</div>`;
+  });
+  html+='</div>';
+
+  for(let w=0;w<WEEKS;w++){
+    const weekStart=new Date(startOfWeek);
+    weekStart.setDate(startOfWeek.getDate()+w*7);
+    const thu=new Date(weekStart); thu.setDate(weekStart.getDate()+3);
+    const jan1=new Date(thu.getFullYear(),0,1);
+    const wkNum=Math.ceil(((thu-jan1)/86400000+1)/7);
+
+    html+=`<div style="display:grid;grid-template-columns:32px repeat(7,1fr);border-bottom:1px solid var(--border)">`;
+    html+=`<div style="padding:4px 2px;font-size:9px;color:var(--ink3);text-align:center;border-right:1px solid var(--border);padding-top:6px">${wkNum}</div>`;
+
+    for(let d=0;d<7;d++){
+      const day=new Date(weekStart); day.setDate(weekStart.getDate()+d);
+      const key=day.toISOString().slice(0,10);
+      const isToday=day.getTime()===today.getTime();
+      const isPast=day<today;
+      const evs=evMap[key]||[];
+      const cellBg=isToday?'rgba(44,74,62,.06)':isPast?'rgba(0,0,0,.012)':'transparent';
+      const br=d<6?'border-right:1px solid var(--border)':'';
+
+      html+=`<div style="min-height:52px;padding:2px 3px;background:${cellBg};${br}">`;
+
+      const dayNumStyle=isToday
+        ?'display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--accent);color:#fff;font-size:10px;font-weight:700;margin-bottom:1px'
+        :`font-size:10px;color:${isPast?'var(--ink3)':'var(--ink2)'};margin-bottom:1px;padding:0 1px`;
+      html+=`<div style="${dayNumStyle}">${day.getDate()}</div>`;
+
+      evs.forEach(ev=>{
+        const col=getCatColor(ev.caseType);
+        const isRem=ev.eventType==='reminder';
+        const barColor=isRem?'#B8860B':col.bar;
+        const bgColor=isRem?'#FDF8EC':col.bg;
+        const txtColor=isRem?'#7A5C00':col.text;
+        const namePart=ev.caseName.split(' ')[0];
+        const labelPart=ev.label.split(/\s+/).slice(-1)[0];
+        html+=`<div onclick="viewCase('${ev.caseId}')" title="${ev.caseName}
+${ev.label}"
+          style="font-size:10px;padding:2px 4px;border-radius:2px;margin-bottom:2px;cursor:pointer;
+                 line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+                 font-weight:500;border-left:2px solid ${barColor};background:${bgColor};color:${txtColor}">
+          ${esc(namePart)} ${esc(labelPart)}</div>`;
+      });
+      html+='</div>';
+    }
+    html+='</div>';
+  }
+  document.getElementById('cal-grid').innerHTML=html;
+}
+
+// ── Cards ─────────────────────────────────────────────
+let currentSort = 'date';
+
+function setSort(s){
+  currentSort = s;
+  document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('sort-btn-'+s);
+  if(btn) btn.classList.add('active');
+  renderCards();
+}
+
+// Suffix tokens to strip from case names
+const NAME_SUFFIXES = new Set(['DWI','EXP','CJA','TRAF','MUN','FILE','RET','ARR','STAT',
+  'MOT','PRT','TRL','DISC','FA','SENT','JP','PE','RTSC','ADMIN','DISC','DIV']);
+
+function parseName(raw){
+  // Returns {display: "First Last", sortKey: "last"}
+  const name = (raw||'').trim();
+
+  // "Last, First" format
+  if(name.includes(',')){
+    const [last, ...rest] = name.split(',');
+    const first = rest.join(',').trim();
+    return { display: last.trim()+' '+first, sortKey: last.trim().toLowerCase() };
+  }
+
+  // Strip numeric-heavy tokens and known suffixes from end
+  const tokens = name.split(/\s+/);
+  const clean = [];
+  for(const t of tokens){
+    if(NAME_SUFFIXES.has(t.toUpperCase())) break;
+    if(/^\d/.test(t)) break;  // token starts with digit (case numbers etc)
+    clean.push(t);
+  }
+  const parts = clean.length >= 1 ? clean : tokens.slice(0,2);
+
+  if(parts.length === 1) return { display: parts[0], sortKey: parts[0].toLowerCase() };
+
+  const last  = parts[0];
+  const first = parts.slice(1).join(' ');
+  return { display: last+' '+first, sortKey: last.toLowerCase() };
+}
+
+function getLastName(caseName){ return parseName(caseName).sortKey; }
+function getDisplayName(caseName){ return parseName(caseName).display; }
+
+function getNextEventDate(c){
+  const today = new Date(); today.setHours(0,0,0,0);
+  const evs = getEvents(c).filter(ev=>ev.date);
+  const future = evs.map(ev=>new Date(ev.date+'T12:00:00')).filter(d=>!isNaN(d)&&d>=today);
+  future.sort((a,b)=>a-b);
+  return future.length ? future[0] : new Date('9999-01-01');
+}
+
+function renderCards(){
+  const q = (document.getElementById('search').value||'').toLowerCase();
+  let filtered = cases.filter(c =>
+    caseVisible(c) &&
+    (!q || c.caseName.toLowerCase().includes(q) || c.caseType.toLowerCase().includes(q) ||
+           c.summary.toLowerCase().includes(q) ||
+           getEvents(c).some(ev=>(ev.label||'').toLowerCase().includes(q)))
+  );
+
+  // Sort
+  if(currentSort === 'name'){
+    filtered.sort((a,b) => getLastName(a.caseName).localeCompare(getLastName(b.caseName)));
+  } else if(currentSort === 'date'){
+    filtered.sort((a,b) => getNextEventDate(a) - getNextEventDate(b));
+  } else if(currentSort === 'type'){
+    filtered.sort((a,b) => {
+      const tc = a.caseType.localeCompare(b.caseType);
+      return tc !== 0 ? tc : getLastName(a.caseName).localeCompare(getLastName(b.caseName));
+    });
+  }
+
+  document.getElementById('case-count').textContent = `(${filtered.length}${filtered.length!==cases.length?' of '+cases.length:''})`;
+
+  if(!filtered.length){
+    document.getElementById('cards').innerHTML = '<div class="empty"><div class="empty-icon">\u2696</div><p>'+(cases.length?'No cases match.':'No cases yet.')+'</p></div>';
+    return;
+  }
+
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  document.getElementById('cards').innerHTML = filtered.map(c => {
+    const col = getCatColor(c.caseType);
+    const calOnly = c.id && c.id.startsWith('cal_');
+    const evs = getEvents(c).filter(ev=>ev.date).sort((a,b)=>new Date(a.date)-new Date(b.date));
+    const futureEvs = evs.filter(ev=>new Date(ev.date+'T12:00:00')>=today);
+    const showEvs = (futureEvs.length ? futureEvs : evs.slice(-3)).slice(0,4);
+
+    const evHtml = showEvs.map(ev => {
+      const isRem = ev.type==='reminder';
+      const barC = isRem?'#B8860B':col.bar;
+      const bgC  = isRem?'#FDF8EC':col.bg;
+      const txtC = isRem?'#7A5C00':col.text;
+      return `<div class="row-event" style="background:${bgC};border-left-color:${barC}">
+        <span class="row-event-date" style="color:${txtC}">${fmtEventDate(ev.date)}${ev.time?' '+fmtEventTime(ev.time):''}</span>
+        <span class="row-event-label" style="color:${txtC}">${esc(ev.label||'')}${ev.location?' · '+esc(ev.location):''}</span>
+      </div>`;
+    }).join('');
+
+    return `<div class="case-row" style="border-left-color:${col.bar}">
+
+      <!-- Name + meta -->
+      <div class="row-name-col">
+        <div class="row-case-name">${esc(getDisplayName(c.caseName))}${calOnly?'<span class="cal-only-badge">Cal</span>':''}</div>
+        ${c.location?`<div class="row-case-meta">${esc(c.location)}</div>`:''}
+      </div>
+
+      <!-- Type badge -->
+      <div class="row-type-col">
+        <span class="type-badge" style="background:${col.bg};color:${col.text};border-color:${col.border}">${esc(c.caseType)}</span>
+      </div>
+
+      <!-- Summary -->
+      <div class="row-summary-col">
+        <div class="row-summary-label">Summary</div>
+        <div class="row-summary-text">${esc(c.summary||'No summary yet.')}</div>
+      </div>
+
+      <!-- Dates -->
+      <div class="row-dates-col">
+        <div class="row-dates-label">Dates &amp; reminders</div>
+        ${evHtml || '<span style="font-size:11px;color:var(--ink3)">None scheduled</span>'}
+      </div>
+
+      <!-- Actions -->
+      <div class="row-actions-col">
+        <button class="btn-ghost" onclick="viewCase('${c.id}')">View</button>
+        <button class="btn-ghost" onclick="openEdit('${c.id}')">Edit</button>
+        <button class="btn-del" onclick="deleteCase('${c.id}')">Remove</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderAll(){ renderStats(); renderUpcoming(); renderCal(); renderCards(); }
+
+// ── View case detail ──────────────────────────────────
+function viewCase(id){
+  const c=cases.find(x=>x.id===id); if(!c) return;
+  const col=getCatColor(c.caseType);
+  const evs=getEvents(c).filter(ev=>ev.date).sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const evHtml=evs.length?`
+    <div class="detail-events">
+      ${evs.map(ev=>{
+        const isRem=ev.type==='reminder';
+        const barC=isRem?'#B8860B':col.bar;
+        const bgC=isRem?'#FDF8EC':col.bg;
+        const txtC=isRem?'#7A5C00':col.text;
+        const bdrC=isRem?'#E8D080':col.border;
+        return `<div class="detail-event-row" style="background:${bgC};border-left-color:${barC}">
+          <span class="detail-event-date" style="color:${txtC}">${fmtEventDate(ev.date)}${ev.time?' '+fmtEventTime(ev.time):''}</span>
+          <span class="detail-event-label">${esc(ev.label||'')}${ev.location?`<span style="color:var(--ink3);font-size:12px"> &middot; ${esc(ev.location)}</span>`:''}</span>
+          <span class="detail-event-type" style="background:${bgC};color:${txtC};border-color:${bdrC}">${isRem?'reminder':'court'}</span>
+        </div>`;
+      }).join('')}
+    </div>`
+    :'<p style="font-size:13px;color:var(--ink3);margin-top:8px">No dates scheduled.</p>';
+
+  document.getElementById('modal-container').innerHTML=`
+    <div class="modal-bg" onclick="if(event.target===this)closeModal()">
+      <div class="modal detail-modal" style="border-top-color:${col.bar}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px">
+          <h2 style="margin-bottom:0">${esc(getDisplayName(c.caseName))}</h2>
+          <span class="type-badge" style="background:${col.bg};color:${col.text};border-color:${col.border};flex-shrink:0">${esc(c.caseType)}</span>
+        </div>
+        ${c.location?`<p style="font-size:13px;color:var(--ink3);margin-bottom:10px">${esc(c.location)}</p>`:''}
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink3);font-weight:500;margin-bottom:4px">Summary</div>
+        <div style="font-size:14px;line-height:1.7;color:var(--ink2);background:var(--bg);padding:10px 12px;border-radius:var(--radius);border:1px solid var(--border);white-space:pre-wrap">${esc(c.summary||'No summary yet.')}</div>
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink3);font-weight:500;margin-top:14px;margin-bottom:4px">Dates &amp; reminders</div>
+        ${evHtml}
+        <div class="modal-footer">
+          <button class="btn-cancel-modal" onclick="closeModal()">Close</button>
+          <button class="btn-save" style="background:${col.bar}" onclick="closeModal();openEdit('${c.id}')">Edit case</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ── Edit / Add modal ──────────────────────────────────
+async function addCase(fields){ const now=Date.now(); cases.unshift({id:uid(),...fields,events:fields.events||[],createdAt:now,updatedAt:now}); await saveCases(); renderAll(); }
+let _pendingDeleteId = null;
+
+function deleteCase(id){
+  const c = cases.find(x=>x.id===id);
+  if(!c) return;
+  _pendingDeleteId = id;
+  document.getElementById('modal-container').innerHTML=`
+    <div class="modal-bg" onclick="if(event.target===this)closeModal()">
+      <div class="modal" style="max-width:400px">
+        <h2>Remove case?</h2>
+        <p style="font-size:14px;color:var(--ink2);margin-bottom:1.5rem">Remove <strong>${esc(getDisplayName(c.caseName))}</strong> from the dashboard? This cannot be undone.</p>
+        <div class="modal-footer" style="margin-top:0;padding-top:1rem">
+          <button class="btn-cancel-modal" onclick="closeModal()">Cancel</button>
+          <button style="background:var(--danger);color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;border:none;border-radius:4px;padding:8px 20px;cursor:pointer"
+            onclick="confirmDelete()">Remove</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+async function confirmDelete(){
+  if(!_pendingDeleteId) return;
+  cases = cases.filter(c=>c.id!==_pendingDeleteId);
+  _pendingDeleteId = null;
+  await saveCases();
+  closeModal();
+  renderAll();
+  showToast('Case removed.');
+}
+function openManualAdd(){ editId=null; showFormModal({caseName:'',caseType:'',location:'',summary:'',events:[]}); }
+function openEdit(id){ editId=id; const c=cases.find(x=>x.id===id); if(c) showFormModal(c); }
+
+function showFormModal(c){
+  const evs=getEvents(c);
+  document.getElementById('modal-container').innerHTML=`
+    <div class="modal-bg" onclick="if(event.target===this)closeModal()">
+      <div class="modal">
+        <h2>${editId?'Edit case':'Add case'}</h2>
+        <div class="field"><label>Case name</label><input type="text" id="f-name" value="${esc(c.caseName||'')}"/></div>
+        <div class="field-row">
+          <div class="field"><label>Category</label>
+            <select id="f-type">${CASE_TYPES.map(t=>`<option value="${t}" ${c.caseType===t?'selected':''}>${t}</option>`).join('')}</select>
+          </div>
+          <div class="field"><label>Court / Location</label><input type="text" id="f-loc" value="${esc(c.location||'')}"/></div>
+        </div>
+        <div class="field"><label>Summary / Notes</label><textarea id="f-summary">${esc(c.summary||'')}</textarea></div>
+        <div class="field">
+          <label>Dates &amp; reminders</label>
+          <div class="events-editor" id="events-editor">
+            <div class="events-header-row">
+              <span>Label</span><span>Date</span><span>Time</span><span>Location</span><span>Type</span><span></span>
+            </div>
+            <div id="event-rows">
+              ${evs.map((ev,i)=>eventRowHtml(i,ev)).join('')}
+            </div>
+            <button class="btn-add-event" onclick="addEventRow()">+ Add date / reminder</button>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-cancel-modal" onclick="closeModal()">Cancel</button>
+          <button class="btn-save" onclick="saveModal()">Save</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function eventRowHtml(i, ev){
+  return `<div class="event-row" id="evrow-${i}">
+    <input type="text" id="ev-label-${i}" value="${esc(ev.label||'')}" placeholder="e.g. Trial, Arraignment"/>
+    <input type="date" id="ev-date-${i}" value="${ev.date||''}"/>
+    <input type="time" id="ev-time-${i}" value="${ev.time||''}"/>
+    <input type="text" id="ev-loc-${i}" value="${esc(ev.location||'')}" placeholder="e.g. Section M1, EDLA" autocomplete="off"/>
+    <select id="ev-type-${i}">
+      <option value="court" ${ev.type==='court'?'selected':''}>Court</option>
+      <option value="reminder" ${ev.type==='reminder'?'selected':''}>Reminder</option>
+      <option value="deadline" ${ev.type==='deadline'?'selected':''}>Deadline</option>
+    </select>
+    <button class="btn-remove-event" onclick="removeEventRow(${i})" title="Remove">&times;</button>
+  </div>`;
+}
+
+let _evRowCount = 0;
+function addEventRow(){
+  _evRowCount++;
+  const container=document.getElementById('event-rows');
+  const div=document.createElement('div');
+  div.innerHTML=eventRowHtml('new_'+_evRowCount,{label:'',date:'',type:'court'});
+  container.appendChild(div.firstChild);
+}
+
+function removeEventRow(i){
+  const el=document.getElementById('evrow-'+i);
+  if(el) el.remove();
+}
+
+function collectEvents(){
+  const rows=document.getElementById('event-rows').querySelectorAll('.event-row');
+  const result=[];
+  rows.forEach(row=>{
+    const id=row.id.replace('evrow-','');
+    const label=(document.getElementById('ev-label-'+id)||{}).value||'';
+    const date=(document.getElementById('ev-date-'+id)||{}).value||'';
+    const time=(document.getElementById('ev-time-'+id)||{}).value||'';
+    const location=(document.getElementById('ev-loc-'+id)||{}).value||'';
+    const type=(document.getElementById('ev-type-'+id)||{}).value||'court';
+    if(label||date) result.push({label:label.trim(),date,time:time.trim(),location:location.trim(),type});
+  });
+  return result;
+}
+
+function closeModal(){ document.getElementById('modal-container').innerHTML=''; _evRowCount=0; }
+
+async function saveModal(){
+  const caseName=document.getElementById('f-name').value.trim();
+  if(!caseName){ showToast('Case name required.'); return; }
+  const fields={
+    caseName,
+    caseType:document.getElementById('f-type').value,
+    location:document.getElementById('f-loc').value.trim(),
+    summary:document.getElementById('f-summary').value.trim(),
+    events:collectEvents(),
+    nextDate:'',
+  };
+  const now=Date.now();
+  if(editId){
+    const i=cases.findIndex(c=>c.id===editId);
+    cases[i]={...cases[i],...fields,updatedAt:now};
+  } else {
+    cases.unshift({id:uid(),...fields,createdAt:now,updatedAt:now});
+  }
+  await saveCases(); closeModal(); renderAll();
+  showToast(editId?'Case updated.':'Case added.');
+}
+
+// ── Export / Import ───────────────────────────────────
+function exportJSON(){
+  document.getElementById('modal-container').innerHTML=`
+    <div class="modal-bg" onclick="if(event.target===this)closeModal()">
+      <div class="modal"><h2>Export data</h2>
+        <textarea readonly style="width:100%;min-height:200px;font-family:monospace;font-size:11px;padding:10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--ink);resize:vertical" id="export-text">${JSON.stringify(cases,null,2)}</textarea>
+        <div class="modal-footer">
+          <button class="btn-cancel-modal" onclick="closeModal()">Close</button>
+          <button class="btn-save" onclick="document.getElementById('export-text').select();document.execCommand('copy');showToast('Copied!')">Copy all</button>
+        </div>
+      </div>
+    </div>`;
+  setTimeout(()=>{ const t=document.getElementById('export-text'); if(t) t.select(); },100);
+}
+
+function showImport(){
+  document.getElementById('modal-container').innerHTML=`
+    <div class="modal-bg" onclick="if(event.target===this)closeModal()">
+      <div class="modal"><h2>Import cases</h2>
+        <p style="font-size:12px;color:var(--ink3);margin-bottom:.75rem">Paste JSON exported from this dashboard.</p>
+        <textarea id="import-text" style="width:100%;min-height:160px;font-family:monospace;font-size:11px;padding:10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--ink);resize:vertical" placeholder='[{"caseName":"..."}]'></textarea>
+        <div class="modal-footer">
+          <button class="btn-cancel-modal" onclick="closeModal()">Cancel</button>
+          <button class="btn-save" onclick="doImport()">Import</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+async function doImport(){
+  try{
+    const arr=JSON.parse(document.getElementById('import-text').value);
+    const now=Date.now(); let added=0;
+    (Array.isArray(arr)?arr:[arr]).forEach(c=>{
+      if(!cases.find(x=>x.id===c.id)){
+        if(!c.events) c.events=[];
+        cases.unshift({...c,id:c.id||uid(),createdAt:c.createdAt||now,updatedAt:c.updatedAt||now});
+        added++;
+      }
+    });
+    await saveCases(); closeModal(); renderAll(); showToast('Imported '+added+' case(s).');
+  }catch(e){ showToast('Invalid JSON.'); }
+}
+
+
+
+// ── Direct fetch (works when running as local HTML file in browser) ────────
+async function fetchViaProxy(workerUrl) {
+  const resp = await fetch(workerUrl);
+  if (!resp.ok) throw new Error('Worker returned ' + resp.status);
+  return resp.json();
+}
+
+// ── iCloud CalDAV Sync ────────────────────────────────────────────────────────
+const ICLOUD_WORKER_KEY = 'icloud_worker_url';
+
+function showICloudSync(){
+  // Load saved worker URL
+  let savedUrl = '';
+  try { savedUrl = localStorage.getItem(ICLOUD_WORKER_KEY) || ''; } catch(e){}
+
+  document.getElementById('modal-container').innerHTML=`
+    <div class="modal-bg" onclick="if(event.target===this)closeModal()">
+      <div class="modal" style="max-width:540px">
+        <h2>&#9729; Sync with iCloud</h2>
+        <p style="font-size:13px;color:var(--ink2);margin-bottom:1rem;line-height:1.6">
+          Enter the URL of your Cloudflare Worker proxy. Once set, this dashboard will pull
+          your iCloud calendar events and reminders directly.
+        </p>
+        <div class="field">
+          <label>Cloudflare Worker URL</label>
+          <input type="url" id="worker-url-input" value="${esc(savedUrl)}"
+            placeholder="https://your-worker.your-subdomain.workers.dev" style="font-size:13px"/>
+        </div>
+        <p style="font-size:11px;color:var(--ink3);line-height:1.6;margin-top:-.5rem">
+          Deploy the <strong>cloudflare_worker.js</strong> file to Cloudflare Workers, set your
+          <code style="background:var(--bg);padding:1px 4px;border-radius:3px">APPLE_ID</code> and
+          <code style="background:var(--bg);padding:1px 4px;border-radius:3px">APP_PASSWORD</code>
+          environment variables, then paste the worker URL above.
+        </p>
+        <div id="sync-result" style="margin-top:.75rem"></div>
+        <div class="modal-footer">
+          <button class="btn-cancel-modal" onclick="closeModal()">Cancel</button>
+          <button class="btn-save" onclick="testAndSaveWorker()">Test &amp; Save</button>
+          ${savedUrl ? `<button class="btn-save" style="background:var(--accent)" onclick="syncFromCalDAV()">Sync now</button>` : ''}
+        </div>
+      </div>
+    </div>`;
+}
+
+async function testAndSaveWorker(){
+  const url = (document.getElementById('worker-url-input').value||'').trim();
+  if(!url){ showToast('Please enter your Worker URL.'); return; }
+  const resultEl = document.getElementById('sync-result');
+  resultEl.innerHTML = '<p style="font-size:12px;color:var(--ink3)">Testing connection...</p>';
+  try{
+    const data = await fetchViaProxy(url);
+    if(data.ok){
+      try{ localStorage.setItem(ICLOUD_WORKER_KEY, url); }catch(e){}
+      resultEl.innerHTML = `<p style="font-size:12px;color:#2E7D32">&#10003; Connected — ${data.count} event(s) found. Click Sync now to import.</p>`;
+      // Add sync button
+      const footer = document.querySelector('.modal-footer');
+      if(!footer.querySelector('.sync-now-btn')){
+        const btn = document.createElement('button');
+        btn.className='btn-save sync-now-btn'; btn.style.background='var(--accent)';
+        btn.textContent='Sync now'; btn.onclick=syncFromCalDAV;
+        footer.appendChild(btn);
+      }
+    } else {
+      resultEl.innerHTML = `<p style="font-size:12px;color:var(--danger)">&#10007; Error: ${esc(data.error||'Unknown error')}</p>`;
+    }
+  } catch(e){
+    resultEl.innerHTML = `<p style="font-size:12px;color:var(--danger)">&#10007; Could not reach worker: ${esc(e.message)}</p>`;
+  }
+}
+
+async function syncFromCalDAV(){
+  let url = '';
+  try{ url = localStorage.getItem(ICLOUD_WORKER_KEY)||''; }catch(e){}
+  if(!url){ showICloudSync(); return; }
+
+  closeModal();
+  showToast('Syncing with iCloud...');
+
+  try{
+    const data = await fetchViaProxy(url);
+    if(!data.ok) throw new Error(data.error||'Sync failed');
+
+    const now = Date.now();
+
+    // ── Step 1: Strip all iCloud-sourced events from every case ──────────────
+    cases.forEach(c => {
+      if(Array.isArray(c.events)){
+        c.events = c.events.filter(e => !e.fromICloud);
+      }
+    });
+
+    // ── Step 2: Remove standalone iCloud-only case entries ───────────────────
+    cases = cases.filter(c => {
+      if(!c.id || !c.id.startsWith('cal_')) return true;
+      // Keep cal_ entries that have non-iCloud events or were manually added
+      const hasManualEvents = (c.events||[]).some(e => !e.fromICloud);
+      const wasManuallyAdded = !c.events || c.events.length === 0 || hasManualEvents;
+      return wasManuallyAdded;
+    });
+
+    // ── Step 3: Add fresh iCloud data ────────────────────────────────────────
+    let matched=0, added=0;
+
+    data.events.forEach(ev => {
+      if(!ev.summary) return;
+
+      const newEvent = {
+        label: ev.summary,
+        date: ev.date||'',
+        time: ev.time||'',
+        location: ev.location||'',
+        type: ev.type||'court',
+        uid: ev.uid||'',
+        fromICloud: true,
+      };
+
+      // Try to match to existing case by last name
+      const nameLower = ev.summary.toLowerCase();
+      const matchedCase = cases.find(c => {
+        const lastWord = (c.caseName||'').toLowerCase().split(/\s+/)[0];
+        return lastWord.length > 2 && (
+          nameLower.includes(lastWord) ||
+          (c.caseName||'').toLowerCase().split(/\s+/).some(w => w.length>3 && nameLower.includes(w))
+        );
+      });
+
+      if(matchedCase){
+        matchedCase.events = [...(matchedCase.events||[]), newEvent];
+        matchedCase.updatedAt = now;
+        matched++;
+      } else {
+        // Standalone calendar entry
+        cases.unshift({
+          id: 'cal_'+uid(),
+          caseName: ev.summary,
+          caseType: 'Criminal/Traf Other',
+          location: ev.location||'',
+          summary: ev.description||'Synced from iCloud.',
+          events: [newEvent],
+          nextDate: '',
+          createdAt: now,
+          updatedAt: now,
+        });
+        added++;
+      }
+    });
+
+    await saveCases();
+    renderAll();
+    showToast(`iCloud sync complete — ${matched} matched to cases, ${added} standalone entries.`);
+
+  } catch(e){
+    showToast('Sync failed: '+e.message);
+  }
+}
+
+// ── ICS / iCal Import ─────────────────────────────────────────────────────
+function showICSImport(){
+  document.getElementById('modal-container').innerHTML=`
+    <div class="modal-bg" onclick="if(event.target===this)closeModal()">
+      <div class="modal" style="max-width:520px">
+        <h2>&#128197; Import iCal / ICS</h2>
+        <p style="font-size:13px;color:var(--ink2);margin-bottom:1rem;line-height:1.6">
+          Export your iCloud calendar <strong>or Reminders list</strong> as an <strong>.ics file</strong> and upload it here.
+          Events and reminders will be matched to existing cases by name where possible.
+        </p>
+        <p style="font-size:12px;color:var(--ink3);margin-bottom:1rem;line-height:1.5">
+          <strong>Calendar events:</strong> Open Calendar on Mac → File → Export → Export...<br/>
+          <strong>Reminders:</strong> Open Reminders on Mac → File → Export...
+        </p>
+        <div id="ics-drop-zone" style="border:2px dashed var(--border);border-radius:var(--radius-lg);padding:2rem;text-align:center;cursor:pointer;transition:border-color .2s;background:var(--bg)"
+          onclick="document.getElementById('ics-file-input').click()"
+          ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
+          ondragleave="this.style.borderColor='var(--border)'"
+          ondrop="event.preventDefault();this.style.borderColor='var(--border)';handleICSFile(event.dataTransfer.files[0])">
+          <div style="font-size:28px;margin-bottom:8px">&#128196;</div>
+          <div style="font-size:14px;font-weight:500;color:var(--ink)">Drop .ics file here</div>
+          <div style="font-size:12px;color:var(--ink3);margin-top:4px">or click to browse</div>
+        </div>
+        <input type="file" id="ics-file-input" accept=".ics" style="display:none" onchange="handleICSFile(this.files[0])"/>
+        <div id="ics-preview" style="margin-top:1rem"></div>
+        <div class="modal-footer">
+          <button class="btn-cancel-modal" onclick="closeModal()">Cancel</button>
+          <button class="btn-save" id="ics-import-btn" style="display:none" onclick="doICSImport()">Import events</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+let _parsedICSEvents = [];
+
+function handleICSFile(file){
+  if(!file || !file.name.endsWith('.ics')){ showToast('Please select a .ics file.'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    _parsedICSEvents = parseICS(e.target.result);
+    renderICSPreview(_parsedICSEvents);
+  };
+  reader.readAsText(file);
+}
+
+function parseICS(text){
+  const events = [];
+
+  // Helper: extract a field from a block
+  const getField = (block, key) => {
+    const m = block.match(new RegExp(key+'(?:;[^:]*)?:([^\r\n]+)'));
+    return m ? m[1].trim() : '';
+  };
+
+  // Helper: parse a DTSTART or DUE date string into {date, time}
+  const parseDT = (dtstr) => {
+    if(!dtstr || dtstr.length < 8) return {date:'', time:''};
+    const y = dtstr.slice(0,4), mo = dtstr.slice(4,6), d = dtstr.slice(6,8);
+    let date = `${y}-${mo}-${d}`, time = '';
+    if(dtstr.length >= 15){
+      const h = dtstr.slice(9,11), min = dtstr.slice(11,13);
+      if(dtstr.endsWith('Z')){
+        const utc = new Date(`${y}-${mo}-${d}T${h}:${min}:00Z`);
+        time = utc.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false}).slice(0,5);
+        date = utc.toISOString().slice(0,10);
+      } else {
+        time = `${h}:${min}`;
+      }
+    }
+    return {date, time};
+  };
+
+  const processBlock = (block, blockType) => {
+    const get = key => getField(block, key);
+
+    // VEVENT uses DTSTART; VTODO uses DUE or DTSTART
+    const dtRaw = get('DUE') || get('DTSTART');
+    const {date, time} = parseDT(dtRaw);
+
+    const summary  = get('SUMMARY').replace(/\\,/g,',').replace(/\\n/g,' ').trim();
+    const location = get('LOCATION').replace(/\\,/g,',').trim();
+    const desc     = get('DESCRIPTION').replace(/\\n/g,' ').replace(/\\,/g,',').slice(0,200).trim();
+    const status   = get('STATUS'); // VTODO: NEEDS-ACTION, COMPLETED, etc.
+
+    // Skip completed reminders
+    if(status === 'COMPLETED') return;
+    if(!summary) return;
+
+    // For reminders with no due date, still import them (no date)
+    // For events, require a date and skip past ones
+    if(blockType === 'VEVENT'){
+      if(!date) return;
+      if(new Date(date+'T12:00:00') < new Date()) return;
+    } else {
+      // VTODO — include even without date, skip if explicitly in the past
+      if(date && new Date(date+'T12:00:00') < new Date()) return;
+    }
+
+    events.push({ summary, date, time, location, desc, blockType });
+  };
+
+  // Parse VEVENT blocks
+  text.split('BEGIN:VEVENT').slice(1).forEach(block => processBlock(block, 'VEVENT'));
+
+  // Parse VTODO blocks (Reminders)
+  text.split('BEGIN:VTODO').slice(1).forEach(block => processBlock(block, 'VTODO'));
+
+  // Sort: dated items first by date, undated reminders at end
+  return events.sort((a,b) => {
+    if(a.date && b.date) return a.date.localeCompare(b.date);
+    if(a.date) return -1;
+    if(b.date) return 1;
+    return a.summary.localeCompare(b.summary);
+  });
+}
+
+function renderICSPreview(events){
+  const preview = document.getElementById('ics-preview');
+  const btn = document.getElementById('ics-import-btn');
+  if(!events.length){
+    preview.innerHTML='<p style="font-size:13px;color:var(--ink3);text-align:center">No future events found in this file.</p>';
+    btn.style.display='none'; return;
+  }
+
+  // Try to match events to existing cases
+  const matched = [], unmatched = [];
+  events.forEach(ev => {
+    const nameLower = ev.summary.toLowerCase();
+    const matchedCase = cases.find(c => {
+      const cn = (c.caseName||'').toLowerCase();
+      const disp = getDisplayName(c.caseName).toLowerCase();
+      // Match if case name words appear in event summary
+      const lastWord = cn.split(/\s+/)[0];
+      return nameLower.includes(lastWord) || cn.split(/\s+/).some(w => w.length>3 && nameLower.includes(w));
+    });
+    if(matchedCase) matched.push({...ev, matchedId: matchedCase.id, matchedName: matchedCase.caseName});
+    else unmatched.push(ev);
+  });
+
+  const courtCount = events.filter(e=>e.blockType!=='VTODO').length;
+  const todoCount  = events.filter(e=>e.blockType==='VTODO').length;
+  let html = `<div style="font-size:12px;color:var(--ink3);margin-bottom:.75rem">${events.length} item(s) found`;
+  if(courtCount) html += ` · <span style="color:var(--ink2)">${courtCount} court event(s)</span>`;
+  if(todoCount)  html += ` · <span style="color:#7A5C00">${todoCount} reminder(s)</span>`;
+  if(matched.length) html += ` · <span style="color:var(--accent)">${matched.length} matched to cases</span>`;
+  if(unmatched.length) html += ` · <span style="color:var(--ink3)">${unmatched.length} unmatched</span>`;
+  html += '</div>';
+
+  html += '<div style="max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius)">';
+  events.forEach((ev,i) => {
+    const isMatched = matched.find(m=>m.summary===ev.summary&&m.date===ev.date);
+    const bg = isMatched ? 'var(--accent-light)' : 'var(--bg)';
+    const tag = isMatched
+      ? `<span style="font-size:10px;padding:1px 6px;background:var(--accent);color:#fff;border-radius:8px;margin-left:6px">${esc(getDisplayName(isMatched.matchedName))}</span>`
+      : `<span style="font-size:10px;color:var(--ink3);margin-left:6px">unmatched</span>`;
+    const typeTag = ev.blockType==='VTODO'
+      ? '<span style="font-size:10px;padding:1px 5px;background:#FDF8EC;color:#7A5C00;border:1px solid #E8D080;border-radius:8px;margin-left:4px">reminder</span>'
+      : '';
+    html += `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:${bg};border-bottom:1px solid var(--border)">
+      <div style="font-size:11px;color:var(--ink3);white-space:nowrap;min-width:70px">${ev.date?ev.date+(ev.time?' '+fmtEventTime(ev.time):''):'No due date'}</div>
+      <div style="flex:1;font-size:12px;color:var(--ink);font-weight:500">${esc(ev.summary)}${typeTag}${tag}</div>
+      ${ev.location?`<div style="font-size:11px;color:var(--ink3)">${esc(ev.location)}</div>`:''}
+    </div>`;
+  });
+  html += '</div>';
+
+  preview.innerHTML = html;
+  btn.style.display = '';
+  btn.textContent = `Import ${events.length} event(s)`;
+}
+
+async function doICSImport(){
+  if(!_parsedICSEvents.length) return;
+  const now = Date.now();
+  let added = 0, matched = 0;
+
+  _parsedICSEvents.forEach(ev => {
+    // Try to match to existing case
+    const nameLower = ev.summary.toLowerCase();
+    const matchedCase = cases.find(c => {
+      const lastWord = (c.caseName||'').toLowerCase().split(/\s+/)[0];
+      return nameLower.includes(lastWord) || (c.caseName||'').toLowerCase().split(/\s+/).some(w => w.length>3 && nameLower.includes(w));
+    });
+
+    const newEvent = {
+      label: ev.summary,
+      date: ev.date||'',
+      time: ev.time||'',
+      location: ev.location||'',
+      type: ev.blockType==='VTODO' ? 'reminder' : 'court',
+      fromICS: true
+    };
+
+    if(matchedCase){
+      // Add event to matched case (avoid duplicates)
+      const evs = getEvents(matchedCase);
+      const exists = evs.some(e => e.date===ev.date && e.label===ev.summary);
+      if(!exists){
+        matchedCase.events = [...evs, newEvent];
+        matchedCase.updatedAt = now;
+        matched++;
+      }
+    } else {
+      // Create new calendar-only case
+      cases.unshift({
+        id: 'ics_'+uid(),
+        caseName: ev.summary,
+        caseType: 'Criminal/Traf Other',
+        location: ev.location||'',
+        summary: ev.desc||'Imported from iCal.',
+        events: [newEvent],
+        nextDate: '',
+        createdAt: now,
+        updatedAt: now
+      });
+      added++;
+    }
+  });
+
+  await saveCases();
+  closeModal();
+  renderAll();
+  showToast(`ICS imported: ${matched} matched to cases, ${added} new entries added.`);
+  _parsedICSEvents = [];
+}
+
+function showToast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2800); }
+
+loadCases();
+</script>
+</body>
+</html>
