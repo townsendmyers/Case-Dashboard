@@ -153,7 +153,7 @@ main{max-width:1320px;margin:0 auto;padding:1.5rem 2rem}
 
 /* Events editor */
 .events-editor{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-top:4px}
-.event-row{display:grid;grid-template-columns:1fr 110px 70px 110px 80px 32px;gap:6px;padding:7px 10px;border-bottom:1px solid var(--border);align-items:center}
+.event-row{display:grid;grid-template-columns:1fr 108px 66px 66px 110px 78px 32px;gap:5px;padding:7px 10px;border-bottom:1px solid var(--border);align-items:center}
 .event-row:last-child{border-bottom:none}
 .event-row input,.event-row select{font-family:'DM Sans',sans-serif;font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--ink);outline:none;width:100%}
 .event-row input:focus,.event-row select:focus{border-color:var(--accent)}
@@ -161,7 +161,7 @@ main{max-width:1320px;margin:0 auto;padding:1.5rem 2rem}
 .btn-remove-event:hover{color:var(--danger);background:var(--danger-light)}
 .btn-add-event{width:100%;padding:7px;background:var(--bg);border:none;border-top:1px solid var(--border);font-family:'DM Sans',sans-serif;font-size:12px;color:var(--accent);cursor:pointer;font-weight:500}
 .btn-add-event:hover{background:var(--accent-light)}
-.events-header-row{display:grid;grid-template-columns:1fr 110px 70px 110px 80px 32px;gap:6px;padding:5px 10px;background:var(--bg);border-bottom:1px solid var(--border)}
+.events-header-row{display:grid;grid-template-columns:1fr 108px 66px 66px 110px 78px 32px;gap:5px;padding:5px 10px;background:var(--bg);border-bottom:1px solid var(--border)}
 .events-header-row span{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3);font-weight:500}
 
 /* Detail modal */
@@ -370,7 +370,7 @@ function getAllVisibleEvents(){
       if(isNaN(d)||d<today||d>cut) return;
       result.push({caseId:c.id,caseName:c.caseName,caseType:c.caseType,
         date:d,label:ev.label||'Court date',eventType:ev.type||'court',
-        time:ev.time||'',location:ev.location||''});
+        time:ev.time||'',endTime:ev.endTime||'',location:ev.location||''});
     });
   });
   return result;
@@ -408,7 +408,7 @@ function getUpcoming7(){
       const diff=Math.round((d-today)/86400000);
       result.push({caseId:c.id,caseName:c.caseName,caseType:c.caseType,
         date:d,diffDays:diff,label:ev.label||'Court date',eventType:ev.type||'court',
-        time:ev.time||'',location:ev.location||''});
+        time:ev.time||'',endTime:ev.endTime||'',location:ev.location||''});
     });
   });
   return result.sort((a,b)=>a.date-b.date);
@@ -428,7 +428,7 @@ function getAllReminders(){
       const diff=Math.round((d-today)/86400000);
       result.push({caseId:c.id,caseName:c.caseName,caseType:c.caseType,
         date:d,diffDays:diff,label:ev.label||'Reminder',eventType:'reminder',
-        time:ev.time||'',location:ev.location||''});
+        time:ev.time||'',endTime:ev.endTime||'',location:ev.location||''});
     });
   });
   return result.sort((a,b)=>a.date-b.date);
@@ -455,7 +455,7 @@ function renderUpcoming(){
       <div class="upcoming-divider"></div>
       <div class="upcoming-info">
         <div class="upcoming-case">${esc(getDisplayName(ev.caseName))}</div>
-        <div class="upcoming-event">${esc(ev.label)}${ev.time?' '+fmtEventTime(ev.time):''} &middot; ${ds}</div>
+        <div class="upcoming-event">${esc(ev.label)}${ev.time?(' '+fmtEventTime(ev.time)+(ev.endTime?'–'+fmtEventTime(ev.endTime):'')):''} &middot; ${ds}</div>
       </div>
       <div class="upcoming-type-dot" style="background:${col.bar}"></div>
     </div>`;
@@ -672,7 +672,7 @@ function renderCards(){
       const bgC  = isRem?'#FDF8EC':col.bg;
       const txtC = isRem?'#7A5C00':col.text;
       return `<div class="row-event" style="background:${bgC};border-left-color:${barC}">
-        <span class="row-event-date" style="color:${txtC}">${fmtEventDate(ev.date)}${ev.time?' '+fmtEventTime(ev.time):''}</span>
+        <span class="row-event-date" style="color:${txtC}">${fmtEventDate(ev.date)}${ev.time?(' '+fmtEventTime(ev.time)+(ev.endTime?' – '+fmtEventTime(ev.endTime):'')):''}
         <span class="row-event-label" style="color:${txtC}">${esc(ev.label||'')}${ev.location?' · '+esc(ev.location):''}</span>
       </div>`;
     }).join('');
@@ -728,7 +728,7 @@ function viewCase(id){
         const txtC=isRem?'#7A5C00':col.text;
         const bdrC=isRem?'#E8D080':col.border;
         return `<div class="detail-event-row" style="background:${bgC};border-left-color:${barC}">
-          <span class="detail-event-date" style="color:${txtC}">${fmtEventDate(ev.date)}${ev.time?' '+fmtEventTime(ev.time):''}</span>
+          <span class="detail-event-date" style="color:${txtC}">${fmtEventDate(ev.date)}${ev.time?(' '+fmtEventTime(ev.time)+(ev.endTime?' – '+fmtEventTime(ev.endTime):'')):''}</span>
           <span class="detail-event-label">${esc(ev.label||'')}${ev.location?`<span style="color:var(--ink3);font-size:12px"> &middot; ${esc(ev.location)}</span>`:''}</span>
           <span class="detail-event-type" style="background:${bgC};color:${txtC};border-color:${bdrC}">${isRem?'reminder':'court'}</span>
         </div>`;
@@ -808,7 +808,7 @@ function showFormModal(c){
           <label>Dates &amp; reminders</label>
           <div class="events-editor" id="events-editor">
             <div class="events-header-row">
-              <span>Label</span><span>Date</span><span>Time</span><span>Location</span><span>Type</span><span></span>
+              <span>Label</span><span>Date</span><span>Start</span><span>End</span><span>Location</span><span>Type</span><span></span>
             </div>
             <div id="event-rows">
               ${evs.map((ev,i)=>eventRowHtml(i,ev)).join('')}
@@ -828,7 +828,8 @@ function eventRowHtml(i, ev){
   return `<div class="event-row" id="evrow-${i}">
     <input type="text" id="ev-label-${i}" value="${esc(ev.label||'')}" placeholder="e.g. Trial, Arraignment"/>
     <input type="date" id="ev-date-${i}" value="${ev.date||''}"/>
-    <input type="time" id="ev-time-${i}" value="${ev.time||''}"/>
+    <input type="time" id="ev-time-${i}" value="${ev.time||''}" title="Start time"/>
+    <input type="time" id="ev-endtime-${i}" value="${ev.endTime||''}" title="End time"/>
     <input type="text" id="ev-loc-${i}" value="${esc(ev.location||'')}" placeholder="e.g. Section M1, EDLA" autocomplete="off"/>
     <select id="ev-type-${i}">
       <option value="court" ${ev.type==='court'?'selected':''}>Court</option>
@@ -861,9 +862,10 @@ function collectEvents(){
     const label=(document.getElementById('ev-label-'+id)||{}).value||'';
     const date=(document.getElementById('ev-date-'+id)||{}).value||'';
     const time=(document.getElementById('ev-time-'+id)||{}).value||'';
+    const endTime=(document.getElementById('ev-endtime-'+id)||{}).value||'';
     const location=(document.getElementById('ev-loc-'+id)||{}).value||'';
     const type=(document.getElementById('ev-type-'+id)||{}).value||'court';
-    if(label||date) result.push({label:label.trim(),date,time:time.trim(),location:location.trim(),type});
+    if(label||date) result.push({label:label.trim(),date,time:time.trim(),endTime:endTime.trim(),location:location.trim(),type});
   });
   return result;
 }
@@ -940,9 +942,25 @@ async function doImport(){
 
 // ── Direct fetch (works when running as local HTML file in browser) ────────
 async function fetchViaProxy(workerUrl) {
-  const resp = await fetch(workerUrl);
-  if (!resp.ok) throw new Error('Worker returned ' + resp.status);
-  return resp.json();
+  let resp;
+  try {
+    resp = await fetch(workerUrl, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+      mode: 'cors',
+    });
+  } catch(e) {
+    throw new Error('Network error — CORS or connection blocked: ' + e.message);
+  }
+  const text = await resp.text();
+  if (!resp.ok) {
+    throw new Error('Worker HTTP ' + resp.status + ': ' + text.slice(0, 200));
+  }
+  try {
+    return JSON.parse(text);
+  } catch(e) {
+    throw new Error('Invalid JSON from worker: ' + text.slice(0, 200));
+  }
 }
 
 // ── iCloud CalDAV Sync ────────────────────────────────────────────────────────
@@ -1004,7 +1022,7 @@ async function testAndSaveWorker(){
       resultEl.innerHTML = `<p style="font-size:12px;color:var(--danger)">&#10007; Error: ${esc(data.error||'Unknown error')}</p>`;
     }
   } catch(e){
-    resultEl.innerHTML = `<p style="font-size:12px;color:var(--danger)">&#10007; Could not reach worker: ${esc(e.message)}</p>`;
+    resultEl.innerHTML = `<p style="font-size:12px;color:var(--danger)">&#10007; ${esc(e.message)}</p><p style="font-size:11px;color:var(--ink3);margin-top:4px">Worker URL: ${esc(url)}</p>`;
   }
 }
 
@@ -1048,6 +1066,7 @@ async function syncFromCalDAV(){
         label: ev.summary,
         date: ev.date||'',
         time: ev.time||'',
+        endTime: ev.endTime||'',
         location: ev.location||'',
         type: ev.type||'court',
         uid: ev.uid||'',
